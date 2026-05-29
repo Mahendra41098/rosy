@@ -299,6 +299,7 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
     <div class="ni" data-pg="rep" onclick="gp(this)"><span class="ic">📈</span><span class="lb">Reports</span></div>
     <div class="ns">Data</div>
     <div class="ni" data-pg="data" onclick="gp(this)"><span class="ic">📁</span><span class="lb">Import / Export</span></div>
+    <div class="ni" data-pg="barcode" onclick="gp(this)"><span class="ic">🏷️</span><span class="lb">Barcode / Label</span></div>
     <div class="ni" data-pg="settings" onclick="gp(this)"><span class="ic">⚙️</span><span class="lb">Settings</span></div>
     <div class="ni" data-pg="imgs" onclick="gp(this)"><span class="ic">🖼️</span><span class="lb">Product Images</span></div>
   </nav>
@@ -422,48 +423,117 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
       </div>
       <!-- Step 2: Select Brand -->
       <div id="pbr-step2" style="display:none">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <!-- Header bar -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
           <button class="btn bg sm" onclick="showStep1()">← Back</button>
-          <div style="font-size:13px;font-weight:700;flex:1">Party <span id="selPartyLabel" class="bx bpar"></span></div>
-          <button class="btn bg sm" onclick="openOrderFromParty('oos')" title="Order out-of-stock items for this party" style="border-color:var(--red);color:var(--red)">📋 Order OOS</button>
-          <button class="btn bg sm" onclick="openOrderFromParty('sold')" title="Reorder sold items for this party" style="border-color:var(--acc);color:var(--acc)">📋 Order Restock</button>
-          <button class="btn bp sm" onclick="openOrderFromParty('all')" title="Generate full order for this party">📋 Generate Order</button>
+          <span style="font-size:13px;font-weight:700;flex:1">Party <span id="selPartyLabel" class="bx bpar"></span></span>
+          <!-- Order buttons -->
+          <button class="btn bg sm" onclick="openOrderFromParty('oos')" style="border-color:var(--red);color:var(--red)" title="OOS Order">📋 OOS</button>
+          <button class="btn bg sm" onclick="openOrderFromParty('low')" style="border-color:var(--yel);color:var(--yel)" title="Low Stock">📋 Low</button>
+          <button class="btn bg sm" onclick="openOrderFromParty('instock')" style="border-color:var(--grn);color:var(--grn)" title="In-Stock Reorder">📋 In-Stock</button>
+          <button class="btn bp sm" onclick="openOrderFromParty('all')">📋 All</button>
         </div>
-        <div style="font-size:13px;color:var(--t2);margin-bottom:10px;font-weight:600">Step 2 — Select a Brand</div>
-        <!-- Category filter chips -->
-        <div style="margin-bottom:12px">
-          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Filter by Category</div>
-          <div id="catChips2" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+
+        <!-- Tabs: Brands | Articles | Sold | Returns -->
+        <div class="tabs" style="margin-bottom:12px">
+          <button class="tab A" id="pbrTab-brands"   onclick="setPbrTab('brands',this)">🏷️ Brands</button>
+          <button class="tab"   id="pbrTab-articles" onclick="setPbrTab('articles',this)">📦 Articles</button>
+          <button class="tab"   id="pbrTab-sold"     onclick="setPbrTab('sold',this)">📤 Sold Items</button>
+          <button class="tab"   id="pbrTab-returns"  onclick="setPbrTab('returns',this)">↩ Returns</button>
         </div>
-        <!-- Brand search + dropdown -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-          <div style="position:relative;flex:1;min-width:160px">
-            <input id="brandSearchQ" placeholder="🔍  Search brand…" oninput="filterBrandGrid()" style="padding-right:32px">
-            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:13px">🔍</span>
+
+        <!-- BRANDS TAB -->
+        <div id="pbrContent-brands">
+          <!-- Category filter -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Filter by Category</div>
+            <div id="catChips2" style="display:flex;flex-wrap:wrap;gap:6px"></div>
           </div>
-          <select id="brandDropdown" onchange="selectBrandFromDropdown()" style="flex:1;min-width:160px;max-width:240px">
-            <option value="">— Select from list —</option>
-          </select>
-          <button class="btn bg sm" onclick="clearBrandSearch()" id="brandClearBtn" style="display:none">✕ Clear</button>
-        </div>
-        <div class="brand-grid" id="brandGrid"></div>
-        <hr class="divider">
-        <!-- OOS toggle for this party -->
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600">
-            <input type="checkbox" id="oosOnlyParty" onchange="renderBrandArticles()" style="width:auto;accent-color:var(--acc)">
-            Show Out-of-Stock Only
-          </label>
-          <span id="partyOosBadge" class="bx bout"></span>
-          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
-            <button class="btn bg sm" onclick="autoOrderParty(_selParty,'oos')" style="border-color:var(--red);color:var(--red)" title="Add OOS to cart">🛒 OOS</button>
-            <button class="btn bg sm" onclick="autoOrderParty(_selParty,'low')" style="border-color:var(--yel);color:var(--yel)" title="Add Low Stock to cart">🛒 Low</button>
-            <button class="btn bg sm" onclick="autoOrderParty(_selParty,'instock')" style="border-color:var(--grn);color:var(--grn)" title="Add In-Stock to cart">🛒 In-Stock</button>
-            <button class="btn bp sm" onclick="autoOrderParty(_selParty,'all')" title="Add all to cart">🛒 All</button>
+          <!-- Brand search + dropdown -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+            <div style="position:relative;flex:1;min-width:150px">
+              <input id="brandSearchQ" placeholder="🔍  Search brand…" oninput="filterBrandGrid()">
+            </div>
+            <select id="brandDropdown" onchange="selectBrandFromDropdown()" style="flex:1;min-width:150px;max-width:220px">
+              <option value="">— Select from list —</option>
+            </select>
+            <button class="btn bg sm" onclick="clearBrandSearch()" id="brandClearBtn" style="display:none">✕</button>
           </div>
+          <!-- OOS badge + cart buttons -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <span id="partyOosBadge" class="bx bout" style="display:none"></span>
+            <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap">
+              <button class="btn bg sm" onclick="autoOrderParty(_selParty,'oos')" style="border-color:var(--red);color:var(--red)" title="Add OOS to cart">🛒 OOS</button>
+              <button class="btn bg sm" onclick="autoOrderParty(_selParty,'low')" style="border-color:var(--yel);color:var(--yel)" title="Add Low to cart">🛒 Low</button>
+              <button class="btn bg sm" onclick="autoOrderParty(_selParty,'instock')" style="border-color:var(--grn);color:var(--grn)" title="Add In-Stock to cart">🛒 In-Stock</button>
+              <button class="btn bp sm" onclick="autoOrderParty(_selParty,'all')">🛒 All</button>
+            </div>
+          </div>
+          <div class="brand-grid" id="brandGrid"></div>
         </div>
-        <div id="allPartyArticles"></div>
+
+        <!-- ARTICLES TAB (swipe/photo view) -->
+        <div id="pbrContent-articles" style="display:none">
+          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+            <input id="pbrArtSearch" placeholder="🔍 Search article…" oninput="renderPartyArticles()" style="flex:1;min-width:150px">
+            <select id="pbrArtFilter" onchange="renderPartyArticles()" style="max-width:160px">
+              <option value="">All Stock</option>
+              <option value="in">In Stock</option>
+              <option value="out">Out of Stock</option>
+              <option value="low">Low ≤3</option>
+            </select>
+          </div>
+          <div id="pbrArticleGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"></div>
+        </div>
+
+        <!-- SOLD ITEMS TAB -->
+        <div id="pbrContent-sold" style="display:none">
+          <!-- Filters row -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
+            <input id="pbrSoldSearch" placeholder="🔍 Article, category, brand…" oninput="renderPartySold()" style="flex:2;min-width:150px">
+            <select id="pbrSoldGroup" onchange="renderPartySold()" style="flex:1;min-width:130px">
+              <option value="article">By Article (cards)</option>
+              <option value="item">By Item (flat table)</option>
+              <option value="category">By Category</option>
+              <option value="brand">By Brand</option>
+            </select>
+            <select id="pbrSoldCat" onchange="renderPartySold()" style="flex:1;min-width:130px">
+              <option value="">All Categories</option>
+            </select>
+            <select id="pbrSoldBrand" onchange="renderPartySold()" style="flex:1;min-width:120px">
+              <option value="">All Brands</option>
+            </select>
+            <select id="pbrSoldStock" onchange="renderPartySold()" style="flex:1;min-width:120px">
+              <option value="">All Stock</option>
+              <option value="in">Still In Stock</option>
+              <option value="out">Out of Stock</option>
+              <option value="low">Low ≤3</option>
+            </select>
+            <select id="pbrSoldSort" onchange="renderPartySold()" style="flex:1;min-width:130px">
+              <option value="soldDesc">Most Sold</option>
+              <option value="soldAsc">Least Sold</option>
+              <option value="stockAsc">Low Stock First</option>
+              <option value="nameAsc">Name A→Z</option>
+              <option value="priceDesc">Highest Price</option>
+            </select>
+            <button class="btn bg sm" onclick="clearPbrSoldFilters()">✕</button>
+          </div>
+          <!-- Category chip strip (populated dynamically) -->
+          <div id="pbrSoldCatChips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px"></div>
+          <!-- Summary strip -->
+          <div id="pbrSoldSummary"></div>
+          <!-- Results -->
+          <div id="pbrSoldList"></div>
+        </div>
+
+        <!-- RETURNS TAB -->
+        <div id="pbrContent-returns" style="display:none">
+          <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Items returned to this party (zero/negative stock, never sold)</div>
+          <div id="pbrReturnList"></div>
+        </div>
+
       </div>
+
       <!-- Step 3: Brand Articles -->
       <div id="pbr-step3" style="display:none">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
@@ -481,11 +551,20 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
           <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Filter by Category</div>
           <div id="catChips3" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:600">
-            <input type="checkbox" id="oosOnlyBrand" onchange="renderBrandDetailView()" style="width:auto;accent-color:var(--acc)">
-            Out-of-Stock Only
+        <!-- Search + toggles row -->
+        <div style="display:flex;gap:7px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <input id="brandArtSearch" placeholder="🔍 Search article, color…" oninput="renderBrandDetailView()" style="flex:1;min-width:140px">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">
+            <input type="checkbox" id="oosOnlyBrand" onchange="renderBrandDetailView()" style="width:auto;accent-color:var(--red)">
+            <span style="color:var(--red)">OOS Only</span>
           </label>
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap">
+            <input type="checkbox" id="hideReturns" onchange="renderBrandDetailView()" checked style="width:auto;accent-color:var(--acc)">
+            <span>Hide Returns</span>
+          </label>
+          <button class="btn bg sm" onclick="document.getElementById('brandArtSearch').value='';document.getElementById('oosOnlyBrand').checked=false;renderBrandDetailView()">✕</button>
+        </div>
+        <div style="margin-bottom:8px">
           <span id="brandStockInfo" style="font-size:12px;color:var(--t3)"></span>
         </div>
         <div id="brandArticleList"></div>
@@ -822,8 +901,18 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
           <hr class="divider">
           <div style="font-size:14px;font-weight:700;margin-bottom:12px">💾 Backup & Restore</div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn bg" onclick="backupJ()" style="justify-content:flex-start">⬇️ Download JSON Backup</button>
-            <label class="btn bg" style="justify-content:flex-start;cursor:pointer">⬆️ Restore JSON <input type="file" accept=".json" style="display:none" onchange="restoreJ(event)"></label>
+            <button class="btn bp" onclick="backupJ()" style="justify-content:flex-start">⬇️ Full Backup (Data + Photos)</button>
+            <label class="btn bg" style="justify-content:flex-start;cursor:pointer">⬆️ Restore Full Backup <input type="file" accept=".json" style="display:none" onchange="restoreJ(event)"></label>
+          </div>
+          <!-- Photos-only backup -->
+          <div style="background:var(--bg3);border-radius:9px;padding:12px;margin-top:8px">
+            <div style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--t2)">📷 Photos Only</div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:8px">Save/restore only product photos. Useful when full backup is too large.</div>
+            <div style="display:flex;gap:7px">
+              <button class="btn bg sm" onclick="backupPhotosOnly()" style="flex:1;justify-content:center">⬇️ Save Photos</button>
+              <label class="btn bg sm" style="flex:1;justify-content:center;cursor:pointer">⬆️ Load Photos <input type="file" accept=".json" style="display:none" onchange="restorePhotos(event)"></label>
+            </div>
+            <div id="photoBackupInfo" style="font-size:11px;color:var(--t3);margin-top:6px"></div>
           </div>
           <div id="dInfo" style="margin-top:12px;font-size:12px;color:var(--t3);line-height:1.9"></div>
         </div>
@@ -849,6 +938,58 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
       <div id="imgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px"></div>
     </div>
 
+    <!-- BARCODE / LABEL EXPORT -->
+    <div class="pg" id="pg-barcode">
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:14px;height:calc(100vh - 120px)">
+
+        <!-- LEFT: Search & Select -->
+        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto">
+          <div style="font-size:13px;font-weight:700">🔍 Select Items</div>
+          <div style="font-size:11px;color:var(--t3)">Search items and click sizes to add labels</div>
+          <input id="bcSearch" placeholder="Article, brand, D.no, category…" oninput="bcSearchItems()" autocomplete="off">
+          <div style="display:flex;gap:6px">
+            <select id="bcParty" onchange="bcSearchItems()" style="flex:1"><option value="">All Parties</option></select>
+            <select id="bcBrand" onchange="bcSearchItems()" style="flex:1"><option value="">All Brands</option></select>
+          </div>
+          <select id="bcCategory" onchange="bcSearchItems()"><option value="">All Categories</option></select>
+          <select id="bcStockFilter" onchange="bcSearchItems()">
+            <option value="">All Stock</option>
+            <option value="out" selected>Out of Stock</option>
+            <option value="in">In Stock</option>
+          </select>
+          <div style="display:flex;gap:6px">
+            <button class="btn bg sm" onclick="bcAddAllFiltered()" style="flex:1;justify-content:center;font-size:11px">+ Add All</button>
+            <button class="btn bg sm" onclick="bcClear()" style="flex:1;justify-content:center;font-size:11px">🗑️ Clear</button>
+          </div>
+          <div id="bcSearchResults" style="flex:1;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;min-height:100px;background:var(--bg3)">
+            <div style="padding:12px;font-size:11px;color:var(--t3);text-align:center">Type to search…</div>
+          </div>
+          <!-- Export -->
+          <hr style="border:none;border-top:1px solid var(--bdr)">
+          <button class="btn bp" onclick="bcExportExcel()" style="justify-content:center">📊 Export Excel</button>
+          <button class="btn bg" onclick="bcPrintLabels()" style="justify-content:center">🖨️ Print Labels</button>
+          <div style="font-size:11px;color:var(--t3)" id="bcExportInfo"></div>
+        </div>
+
+        <!-- RIGHT: Label list -->
+        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:11px 14px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;flex:1">Label List <span id="bcCount" class="bx bbr" style="font-size:11px">0</span></span>
+            <button class="btn bg sm" onclick="bcSelectAll(true)">☑ All</button>
+            <button class="btn bg sm" onclick="bcSelectAll(false)">☐ None</button>
+            <button class="btn bg sm" onclick="bcClear()" style="color:var(--red)">🗑️ Clear</button>
+          </div>
+          <div style="flex:1;overflow-y:auto" id="bcTable">
+            <div class="empty" style="padding:30px">
+              <div style="font-size:32px;margin-bottom:8px">🏷️</div>
+              <p>Search items and click size pills to add</p>
+            </div>
+          </div>
+          <div style="padding:9px 14px;border-top:1px solid var(--bdr);font-size:11px;color:var(--t3)" id="bcFooter"></div>
+        </div>
+
+      </div>
+    </div>
     <!-- SETTINGS -->
     <div class="pg" id="pg-settings">
       <div style="max-width:700px">
@@ -1121,8 +1262,25 @@ let _camStream=null,_camFacing='environment',_cropImg=null,_curImgKey=null;
 let _cs={x:30,y:30,w:260,h:260,drag:false,resize:false,rh:null,sx:0,sy:0,snap:null};
 
 /* ─── DB ──────────────────────────────────── */
-function loadDB(){try{const r=localStorage.getItem('rosyV4');if(r)DB={...DB,...JSON.parse(r)};}catch(e){}}
-function saveDB(){try{localStorage.setItem('rosyV4',JSON.stringify(DB));}catch(e){toast('Storage full — backup!','err');}}
+function loadDB(){
+  try{const r=localStorage.getItem('rosyV4');if(r)DB={...DB,...JSON.parse(r)};}catch(e){}
+  // Load images from IndexedDB
+  loadAllPhotos().then(imgs=>{
+    DB.images=imgs||{};
+    // Refresh any image-dependent views if already on a relevant page
+    const act=document.querySelector('.pg.A');
+    if(act && (act.id==='pg-imgs'||act.id==='pg-pbr')) renderImgPage?.();
+  });
+}
+function saveDB(){
+  // Save data WITHOUT images to localStorage (images go to IndexedDB)
+  try{
+    const {images,...rest}=DB;
+    localStorage.setItem('rosyV4',JSON.stringify(rest));
+  } catch(e){
+    toast('Storage full — please export data!','err');
+  }
+}
 
 /* ─── PARSERS ──────────────────────────────── */
 function parseName(raw){
@@ -1863,7 +2021,7 @@ function renderPartyGrid(){
 
 function selectParty(p){
   _selParty=p; _selBrand=null;
-  showStep2();
+  showStep2(); _pbrTab='brands'; setPbrTab('brands',document.getElementById('pbrTab-brands'));
 }
 function showStep1(){
   _selParty=null; _selBrand=null;
@@ -1877,8 +2035,18 @@ function showStep2(){
   document.getElementById('pbr-step2').style.display='block';
   document.getElementById('pbr-step3').style.display='none';
   document.getElementById('selPartyLabel').textContent='Party '+_selParty;
+  // Reset sold tab filters when party changes
+  ['pbrSoldCat','pbrSoldBrand','pbrSoldStock','pbrSoldSort'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML=el.tagName==='SELECT'?'<option value="">All</option>':'';el.selectedIndex=0;}});
+  const chipsEl=document.getElementById('pbrSoldCatChips');if(chipsEl)chipsEl.innerHTML='';
+  // Reset to Brands tab
+  _pbrTab='brands';
+  document.querySelectorAll('[id^="pbrTab-"]').forEach(b=>b.classList.remove('A'));
+  document.querySelectorAll('[id^="pbrContent-"]').forEach(d=>d.style.display='none');
+  const bt=document.getElementById('pbrTab-brands');
+  if(bt)bt.classList.add('A');
+  const bc=document.getElementById('pbrContent-brands');
+  if(bc)bc.style.display='block';
   renderBrandGrid();
-  renderBrandArticles();
 }
 function showStep3(){
   _selCategory=null; // reset category when entering brand view
@@ -1894,7 +2062,24 @@ function showStep3(){
 let _partyBrands = {};
 
 function renderBrandGrid(){
-  _selCategory=null; // reset category when party changes
+  _selCategory=null;
+  // Ensure we're on brand tab
+  if(_pbr2Tab!=='brand'){
+    _pbr2Tab='brand';
+    const bt=null;
+    document.querySelectorAll('[id^="pbr2Tab"]').forEach(b=>b.classList.remove('A'));
+    if(bt)bt.classList.add('A');
+  }
+  // Hide alternative tab content
+  const tc=null;
+  if(tc)tc.innerHTML='';
+  // Show brand elements
+  ['catChips2','brandSearchQ','brandGrid'].forEach(id=>{
+    const el=document.getElementById(id);
+    const wrapper=el?.closest('[style]')||el?.parentElement;
+    if(el)el.style.display='';
+    if(wrapper&&wrapper.id!=='pbr2Content')wrapper.style.display='';
+  });
   _partyBrands={};
   // Get all items for this party
   const partyItems=DB.master.filter(i=>i.partyNo===_selParty);
@@ -2032,72 +2217,111 @@ function clearBrandSearch(){
 function selectBrand(b){_selBrand=b;showStep3();}
 
 function renderBrandArticles(){
-  // All articles for this party (grouped), filtered by OOS toggle
-  const oosOnly=document.getElementById('oosOnlyParty').checked;
-  const items=DB.master.filter(i=>i.partyNo===_selParty&&(!oosOnly||i.stock<=0));
-  const groups=getGroups(items);
-  const entries=Object.entries(groups);
-  if(!entries.length){document.getElementById('allPartyArticles').innerHTML='<div class="empty" style="padding:12px">No items found</div>';return;}
-  document.getElementById('allPartyArticles').innerHTML=`
-    <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">All Articles for Party ${_selParty} (${entries.length})</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-    ${entries.map(([k,g])=>`<div class="bx ${g.totalStock<=0?'bout':g.totalStock<=3?'blow':'bok'}" style="cursor:pointer;padding:4px 10px" onclick="openGroup('${esc(k)}')" title="${g.brand}">
-      ${k} <span style="font-size:10px;opacity:.7">${g.totalStock<=0?'OUT':g.totalStock+'pcs'}</span>
-    </div>`).join('')}
-    </div>`;
+  // Now handled by renderPartyArticles() in Articles tab
 }
 
 function renderBrandDetailView(){
-  const oosOnly=document.getElementById('oosOnlyBrand').checked;
-  // Get all items for this party+brand
-  const allItems=DB.master.filter(i=>i.partyNo===_selParty&&i.brand===_selBrand);
-  // Render category chips for step3
-  _catCB['step3Cat']=renderBrandDetailView;
+  const oosOnly     = document.getElementById('oosOnlyBrand')?.checked || false;
+  const hideReturns = document.getElementById('hideReturns')?.checked !== false;
+  const q           = (document.getElementById('brandArtSearch')?.value||'').toLowerCase();
+
+  const allItems = DB.master.filter(i=>i.partyNo===_selParty && i.brand===_selBrand);
+  _catCB['step3Cat'] = renderBrandDetailView;
   renderCatChips('catChips3', allItems, 'step3Cat');
-  // Now filter by category + oos
-  const items=allItems.filter(i=>(!_selCategory||i.category===_selCategory)&&(!oosOnly||i.stock<=0));
-  const groups=getGroups(items);
-  const entries=Object.entries(groups);
-  const total=items.length,inStk=items.filter(i=>i.stock>0).length,out=items.filter(i=>i.stock<=0).length;
-  const retCount=items.filter(i=>i.isPurchaseReturn).length;
-  document.getElementById('brandStockInfo').textContent=`${total} items · ${inStk} in stock · ${out} out${_selCategory?' · Category: '+_selCategory:''}${retCount?' · ⚠️ '+retCount+' returns':''}`;
-  if(!entries.length){document.getElementById('brandArticleList').innerHTML='<div class="empty" style="padding:16px">No items found</div>';return;}
-  document.getElementById('brandArticleList').innerHTML=entries.map(([k,g])=>{
-    const img=DB.images[k];
-    const colorMap={};
+
+  const items = allItems.filter(i=>{
+    if(hideReturns && i.isPurchaseReturn) return false;
+    if(oosOnly && i.stock>0)             return false;
+    if(_selCategory && i.category!==_selCategory) return false;
+    if(q && !i.article.toLowerCase().includes(q) &&
+            !i.itemName.toLowerCase().includes(q) &&
+            !i.color.toLowerCase().includes(q))   return false;
+    return true;
+  });
+
+  const groups  = getGroups(items);
+  const entries = Object.entries(groups);
+  const total   = items.length;
+  const inStk   = items.filter(i=>i.stock>0).length;
+  const outStk  = items.filter(i=>i.stock<=0 && !i.isPurchaseReturn).length;
+  const retCnt  = allItems.filter(i=>i.isPurchaseReturn).length;
+
+  const si = document.getElementById('brandStockInfo');
+  if(si) si.innerHTML =
+    `${total} items · <span class="cg">${inStk} in</span> · <span class="cr">${outStk} out</span>`
+    +(_selCategory?` · <span class="bx bcat" style="font-size:10px">${_selCategory}</span>`:'')
+    +(retCnt?` · <span style="color:var(--red);font-size:11px">↩ ${retCnt} return${retCnt>1?'s':''}${hideReturns?' (hidden)':''}</span>`:'');
+
+  const listEl = document.getElementById('brandArticleList');
+  if(!entries.length){
+    listEl.innerHTML = `<div class="empty" style="padding:16px">${q?'No articles match "'+q+'"':'No items found'}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = entries.map(([k,g])=>{
+    const img       = DB.images[k];
+    const hasReturn = g.items.some(i=>i.isPurchaseReturn);
+    const allReturn = g.items.every(i=>i.isPurchaseReturn);
+
+    const colorMap = {};
     g.items.forEach(item=>{
-      const c=item.color||'—';
-      if(!colorMap[c])colorMap[c]={sizes:{},totalStock:0};
-      colorMap[c].sizes[item.size||'F']={stock:item.stock,dno:item.dno,item};
-      colorMap[c].totalStock+=item.stock;
+      const c = item.color||'—';
+      if(!colorMap[c]) colorMap[c]={sizes:{},totalStock:0};
+      colorMap[c].sizes[item.size||'F'] = {stock:item.stock, dno:item.dno, item};
+      colorMap[c].totalStock += item.stock;
     });
-    const allSizes=[...new Set(g.items.map(i=>i.size||'F'))].sort();
-    return`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:11px;overflow:hidden;margin-bottom:10px">
+    const allSizes = [...new Set(g.items.map(i=>i.size||'F'))].sort();
+
+    // Article card border & opacity based on return status
+    const cardBorder = allReturn
+      ? 'rgba(239,68,68,.5)'
+      : hasReturn ? 'rgba(245,158,11,.4)' : 'var(--bdr)';
+    const cardOpacity = allReturn ? '0.65' : '1';
+
+    return `<div style="background:var(--card);border:1.5px solid ${cardBorder};border-radius:11px;overflow:hidden;margin-bottom:10px;opacity:${cardOpacity}">
       <div style="display:grid;grid-template-columns:90px 1fr;gap:0">
+        <!-- Photo -->
         <div style="height:90px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;position:relative">
           ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}
           <button onclick="openImgModal('${esc(k)}')" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;border-radius:4px;padding:2px 5px;cursor:pointer">📷</button>
+          ${allReturn?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,.12)"><span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;transform:rotate(-15deg)">↩ RETURN</span></div>':''}
         </div>
+        <!-- Info -->
         <div style="padding:10px 12px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
-            <span style="font-size:13px;font-weight:700;cursor:pointer;color:var(--acc)" onclick="openGroup('${esc(k)}')">${k}</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap">
+            <span style="font-size:13px;font-weight:700;cursor:pointer;color:var(--acc);${allReturn?'text-decoration:line-through;color:var(--red)':''}" onclick="openGroup('${esc(k)}')">${k}</span>
             <span class="bx bcat">${g.category}</span>
-            <span style="margin-left:auto;font-size:12px;font-weight:700;color:${g.totalStock<=0?'var(--red)':'var(--grn)'}">${g.totalStock<=0?'ALL OUT':g.totalStock+' pcs'}</span>
+            ${allReturn?'<span class="bx bout" style="font-size:10px;background:rgba(239,68,68,.15)">↩ Return</span>':''}
+            ${hasReturn&&!allReturn?'<span class="bx" style="background:rgba(245,158,11,.12);color:var(--yel);font-size:10px">⚠️ partial</span>':''}
+            <span style="margin-left:auto;font-size:12px;font-weight:700;color:${g.totalStock<=0?'var(--red)':'var(--grn)'}">
+              ${g.totalStock<=0?'ALL OUT':g.totalStock+' pcs'}
+            </span>
           </div>
           <div style="font-size:11px;color:var(--t3);margin-bottom:7px">Sale ₹${g.salePrice} · MRP ₹${g.mrp} · Cost ₹${g.items[0]?.costPer}</div>
+
           ${Object.entries(colorMap).map(([color,cd])=>`
             <div style="margin-bottom:6px">
               <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
-                ${cswDot(color,12)}<span style="font-size:12px;font-weight:600">${color}</span>
+                ${cswDot(color,12)}
+                <span style="font-size:12px;font-weight:600">${color}</span>
                 <span style="font-size:10px;color:var(--t3)">${cd.totalStock} pcs</span>
               </div>
               <div style="display:flex;gap:4px;flex-wrap:wrap">
-                ${Object.entries(cd.sizes).map(([sz,sd])=>`<div class="sp ${sd.stock>0?'in':'out'}" style="font-size:11px;padding:3px 8px" title="D.no: ${sd.dno}">
-                  ${sz}<span class="qty">${sd.stock>0?sd.stock:'0'}</span>
-                  ${sd.stock>0?`<button class="acb" onclick="addCart(${JSON.stringify(sd.item).replace(/"/g,'&quot;')})">+Cart</button>`:''}
-                <button class="aob" onclick="addToOrderCart(${JSON.stringify(sd.item).replace(/"/g,'&quot;')},1)">+Order</button>
-                </div>`).join('')}
-                ${allSizes.filter(sz=>!cd.sizes[sz]).map(sz=>`<div class="sp out" style="font-size:11px;padding:3px 8px;opacity:.4">${sz}<span class="qty">N/A</span></div>`).join('')}
+                ${Object.entries(cd.sizes).map(([sz,sd])=>{
+                  const isRet = sd.item.isPurchaseReturn;
+                  const inStk2= sd.stock>0 && !isRet;
+                  return `<div class="sp ${inStk2?'in':'out'}"
+                    style="font-size:11px;padding:3px 8px;${isRet?'text-decoration:line-through;border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.07);':''}position:relative"
+                    title="${isRet?'↩ Purchase Return — ':''}D.no: ${sd.dno}">
+                    <span>${sz}</span>
+                    <span class="qty">${isRet?'↩':sd.stock>0?sd.stock:'OUT'}</span>
+                    ${inStk2?`<button class="acb" onclick="addCart(${JSON.stringify(sd.item).replace(/"/g,'&quot;')})">+Sale</button>`:''}
+                    ${!isRet
+                      ? `<button class="aob" onclick="addToOrderCart(${JSON.stringify(sd.item).replace(/"/g,'&quot;')},1)">+Order</button>`
+                      : `<span style="font-size:9px;color:var(--red);display:block;margin-top:2px;font-weight:600">Return</span>`}
+                  </div>`;
+                }).join('')}
+                ${allSizes.filter(sz=>!cd.sizes[sz]).map(sz=>`<div class="sp out" style="font-size:11px;padding:3px 8px;opacity:.35">${sz}<span class="qty">N/A</span></div>`).join('')}
               </div>
             </div>`).join('')}
         </div>
@@ -2284,12 +2508,19 @@ function saveCrop(){
   const canvas=document.getElementById('cropC'),d=canvas._d;if(!d||!_curImgKey)return;
   const cx=Math.max(0,(_cs.x-d.ox)/d.scale),cy=Math.max(0,(_cs.y-d.oy)/d.scale);
   const cw=Math.min(d.iw-cx,_cs.w/d.scale),ch=Math.min(d.ih-cy,_cs.h/d.scale);
-  const out=document.createElement('canvas');out.width=640;out.height=640;
-  out.getContext('2d').drawImage(_cropImg,cx,cy,cw,ch,0,0,640,640);
-  DB.images[_curImgKey]=out.toDataURL('image/jpeg',.82);
-  saveDB();toast('Photo saved! ✓','ok');cm('imgMod');stopCam();
-  if(_mkey===_curImgKey)openGroup(_mkey);
-  renderImgPage();
+  // Use 400x400 to save space (still crisp on screen)
+  const out=document.createElement('canvas');out.width=400;out.height=400;
+  out.getContext('2d').drawImage(_cropImg,cx,cy,cw,ch,0,0,400,400);
+  const dataUrl=out.toDataURL('image/jpeg',.78);
+  // Save to IndexedDB (unlimited storage)
+  savePhoto(_curImgKey, dataUrl).then(()=>{
+    DB.images[_curImgKey]=dataUrl; // keep in memory
+    saveDB(); // save meta (localStorage, no images)
+    toast('Photo saved! ✓','ok');
+    cm('imgMod');stopCam();
+    if(_mkey===_curImgKey)openGroup(_mkey);
+    renderImgPage();
+  });
 }
 
 /* ─── IMAGES PAGE ───────────────────────────── */
@@ -2735,17 +2966,42 @@ function expMaster(){if(!DB.master.length){toast('No data','err');return;}xlDl(D
 function expSales(){if(!DB.sales.length){toast('No sales','err');return;}const r=[];DB.sales.forEach(s=>(s.items||[]).forEach(i=>r.push({'Sale ID':s.id,'Date':new Date(s.date).toLocaleString('en-IN'),'Staff':s.staff||'','Customer':s.customer||'','Item':i.itemName,'Color':i.color,'Size':i.size,'Qty':i.qty,'Price':i.price,'Total':i.price*i.qty,'Payment':s.payment,'Payment Breakdown':s.payments?s.payments.map(p=>p.mode+' ₹'+p.amt).join(' + '):s.payment,'Sale Total':s.total})));xlDl(r,'ROSY_Sales');}
 function expOOS(){xlDl(DB.master.filter(i=>i.stock<=0).map(i=>({'D.no':i.dno,'Item Name':i.itemName,'Category':i.category,'Brand':i.brand,'Party':i.partyNo,'Cost/pc ₹':i.costPer})),'ROSY_OOS');}
 function xlDl(rows,name){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name.replace('ROSY_','').slice(0,31));XLSX.writeFile(wb,name+'_'+new Date().toISOString().split('T')[0]+'.xlsx');toast('Exported!','ok');}
-function backupJ(){const b=new Blob([JSON.stringify({...DB,images:{}},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ROSY_Backup_'+new Date().toISOString().split('T')[0]+'.json';a.click();toast('Backup downloaded','ok');}
+function backupJ(){
+  exportAllPhotos().then(imgs=>{
+    const backupData={...DB, images:imgs};
+    const data=JSON.stringify(backupData,null,2);
+    const sizeMB=(data.length/1024/1024).toFixed(1);
+    const b=new Blob([data],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download='ROSY_Backup_'+new Date().toISOString().split('T')[0]+'.json';
+    a.click();
+    const photoCount=Object.keys(imgs||{}).length;
+    toast('Backup downloaded ('+sizeMB+'MB · '+photoCount+' photos)','ok');
+  });
+}
+function backupPhotosOnly(){
+  exportAllPhotos().then(imgs=>{
+    const photoCount=Object.keys(imgs||{}).length;
+    if(!photoCount){toast('No photos saved yet','err');return;}
+    const b=new Blob([JSON.stringify({images:imgs},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download='ROSY_Photos_'+new Date().toISOString().split('T')[0]+'.json';
+    a.click();
+    toast('📷 Photos backup ('+photoCount+' photos)','ok');
+  });
+}
 function restoreJ(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{DB={...DB,...JSON.parse(ev.target.result)};saveDB();refreshAll();toast('Restored!','ok');}catch{toast('Invalid backup file','err');}};r.readAsText(f);}
-function updateDInfo(){document.getElementById('dInfo').innerHTML=`📦 ${DB.master.length.toLocaleString()} products &nbsp;·&nbsp; ⚠️ ${DB.oos.length} OOS &nbsp;·&nbsp; 💰 ${DB.sold.length} sold records &nbsp;·&nbsp; 🛒 ${DB.sales.length} app sales<br>${DB.lastImport?'🕐 Last import: '+new Date(DB.lastImport).toLocaleString('en-IN'):'No import yet'}`;}
+function updateDInfo(){const photoCount=Object.keys(DB.images||{}).length;const infoEl=document.getElementById('photoBackupInfo');if(infoEl)infoEl.textContent=photoCount?photoCount+' photos in library · tap ⬇️ Save Photos to backup':'No photos yet';document.getElementById('dInfo').innerHTML=`📦 ${DB.master.length.toLocaleString()} products &nbsp;·&nbsp; ⚠️ ${DB.oos.length} OOS &nbsp;·&nbsp; 💰 ${DB.sold.length} sold records &nbsp;·&nbsp; 🛒 ${DB.sales.length} app sales &nbsp;·&nbsp; 📷 ${photoCount} photos<br>${DB.lastImport?'🕐 Last import: '+new Date(DB.lastImport).toLocaleString('en-IN'):'No import yet'}`;}
 
 /* ─── NAV ───────────────────────────────────── */
-const TITLES={dash:'Dashboard',prod:'All Products',srch:'Search & Filter',pbr:'Party & Brand View',oos:'Out of Stock',soldinstock:'Sold Items (In Stock)',order:'Order Generator',sale:'New Sale',expenses:'Expenses',hist:'Sales History',rep:'Reports',data:'Import / Export',imgs:'Product Images',settings:'Settings'};
+const TITLES={dash:'Dashboard',barcode:'Barcode / Label Export',prod:'All Products',srch:'Search & Filter',pbr:'Party & Brand View',oos:'Out of Stock',soldinstock:'Sold Items (In Stock)',order:'Order Generator',sale:'New Sale',expenses:'Expenses',hist:'Sales History',rep:'Reports',data:'Import / Export',imgs:'Product Images',settings:'Settings'};
 function gp(el){
   const id=el.dataset.pg;
   // Record history for back navigation
   const prevId=document.querySelector('.pg.A')?.id?.replace('pg-','');
-  if(prevId && prevId!==id){_pageHistory.push(prevId);if(_pageHistory.length>20)_pageHistory.shift();}
+  if(prevId && prevId!==id && !_goingBack){_pageHistory.push(prevId);if(_pageHistory.length>20)_pageHistory.shift();}
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('A'));
   document.getElementById('pg-'+id).classList.add('A');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('A'));
@@ -2762,9 +3018,34 @@ function gp(el){
     expenses:()=>{initExpenseForm();renderExpenses();renderExpChart();},
     hist:renderHist,rep:renderRep,data:updateDInfo,
     imgs:()=>{renderImgPage();initImgFilters();},
+    barcode:()=>{bcInit();},
     settings:()=>{renderSettingsPage();}};
   fn[id]?.();
   updateTopbarActions(id);
+}
+
+function restorePhotos(e){
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      const incoming=data.images||data;
+      const incomingCount=Object.keys(incoming).length;
+      if(!incomingCount){toast('No photos found in file','err');return;}
+      importAllPhotos(incoming).then(count=>{
+        DB.images={...(DB.images||{}),...incoming};
+        const total=Object.keys(DB.images||{}).length;
+        const infoEl=document.getElementById('photoBackupInfo');
+        if(infoEl) infoEl.textContent='✅ '+count+' photos loaded · '+total+' total in library';
+        toast('✅ '+count+' photos loaded into IndexedDB!','ok');
+        renderImgPage?.();
+      });
+    } catch(err){
+      toast('Invalid photos file','err');
+    }
+  };
+  rd.readAsText(f);
 }
 
 /* Init cascade dropdowns to show full lists when page first opens */
@@ -4002,10 +4283,14 @@ let _pageHistory = [];   // stack of {id, el} for back navigation
 function goBack(){
   if(_pageHistory.length===0) return;
   const prevId = _pageHistory.pop();
-  const el = document.querySelector(`[data-pg="${prevId}"]`);
-  if(el) _origGp(el);
-  updateTopbarActions(prevId);
+  const el = document.querySelector('[data-pg="'+prevId+'"]');
+  if(!el) return;
+  // Navigate without adding to history (suppress push)
+  _goingBack = true;
+  gp(el);
+  _goingBack = false;
 }
+let _goingBack = false;
 
 function updateTopbarActions(pageId){
   const backBtn  = document.getElementById('globalBackBtn');
@@ -4773,6 +5058,1071 @@ function changePassword(){
   ['pwdCurrent','pwdNew','pwdConfirm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   toast('✅ Password updated successfully!','ok');
 }
+
+/* ═══════════════════════════════════════════════
+   PARTY & BRAND VIEW — STEP 2 TABS
+   Brand view | Sales Items | SKU Photo View
+═══════════════════════════════════════════════ */
+let _pbr2Tab = 'brand'; // 'brand' | 'sales' | 'sku'
+
+function setPbr2Tab(tab, el){
+  _pbr2Tab = tab;
+  document.querySelectorAll('[id^="pbr2Tab"]').forEach(b=>b.classList.remove('A'));
+  if(el) el.classList.add('A');
+
+  // Show/hide sections based on tab
+  const brandSections = ['catChips2Wrap','brandSearchWrap','brandGridWrap'];
+  const brandVisible  = tab==='brand';
+
+  // The "brand" tab content (category chips, search, grid, articles)
+  const brandEls = [
+    document.getElementById('catChips2')?.closest('div'),
+    document.getElementById('brandSearchQ')?.closest('div[style]'),
+    document.getElementById('brandGrid'),
+    document.getElementById('pbrArticleGrid'),
+  ];
+  // Find category chips wrapper
+  const catWrap = document.getElementById('catChips2')?.parentElement?.parentElement;
+  const srchWrap= document.getElementById('brandSearchQ')?.closest('.sr2') ||
+                  document.getElementById('brandSearchQ')?.parentElement?.parentElement;
+  const bgGrid  = document.getElementById('brandGrid');
+  const aaEl    = document.getElementById('pbrArticleGrid');
+  const divider = document.querySelector('#pbr-step2 .divider');
+  const oosTgl  = document.getElementById('pbrArtFilter')?.closest('div[style]');
+
+  [catWrap, srchWrap, bgGrid, aaEl, divider, oosTgl].forEach(el=>{
+    if(el) el.style.display = brandVisible ? '' : 'none';
+  });
+
+  // Render the selected tab
+  if(tab==='brand'){
+    renderBrandGrid();
+  } else if(tab==='sales'){
+    renderPbr2Sales();
+  } else if(tab==='sku'){
+    renderPbr2Sku();
+  }
+}
+
+/* ── Sales Items tab: show app-recorded sales for this party's items ── */
+function renderPbr2Sales(){
+  const wrap = document.getElementById('pbrContent-brands');
+  if(!wrap) return;
+
+  // Remove old tab content if any
+  let tabEl = null;
+  if(!tabEl){ tabEl=document.createElement('div'); tabEl.id='pbr2TabContent'; wrap.appendChild(tabEl); }
+
+  // Build party item set
+  const partyItems = new Set(DB.master.filter(i=>i.partyNo===_selParty).map(i=>i.itemName));
+
+  // Find all app sales that contain this party's items
+  const salesWithPartyItems = DB.sales.filter(s=>(s.items||[]).some(i=>partyItems.has(i.itemName)));
+
+  if(!salesWithPartyItems.length){
+    tabEl.innerHTML=`<div class="empty" style="padding:30px;text-align:center">
+      <div style="font-size:32px;margin-bottom:8px">💰</div>
+      <p>No sales recorded for Party ${_selParty} items yet.</p>
+      <p style="font-size:11px;color:var(--t3);margin-top:6px">Sales are recorded via the New Sale page.</p>
+    </div>`;
+    return;
+  }
+
+  // Build item-level sales summary
+  const itemSales = {};
+  salesWithPartyItems.forEach(sale=>{
+    (sale.items||[]).forEach(si=>{
+      if(!partyItems.has(si.itemName)) return;
+      if(!itemSales[si.itemName]) itemSales[si.itemName]={qty:0,revenue:0,dates:[],saleIds:[]};
+      itemSales[si.itemName].qty     += si.qty||1;
+      itemSales[si.itemName].revenue += (si.price||0)*(si.qty||1);
+      itemSales[si.itemName].dates.push(sale.date);
+    });
+  });
+
+  const totalSales    = salesWithPartyItems.length;
+  const totalQty      = Object.values(itemSales).reduce((s,v)=>s+v.qty,0);
+  const totalRevenue  = Object.values(itemSales).reduce((s,v)=>s+v.revenue,0);
+  const soldEntries   = Object.entries(itemSales).sort((a,b)=>b[1].qty-a[1].qty);
+
+  tabEl.innerHTML=`
+    <div class="sr" style="margin-bottom:12px">
+      <div class="sc g"><div class="sc-ico">🛒</div><div class="sc-lbl">Sales Count</div><div class="sc-val">${totalSales}</div></div>
+      <div class="sc v"><div class="sc-ico">📦</div><div class="sc-lbl">Items Sold</div><div class="sc-val">${soldEntries.length}</div></div>
+      <div class="sc i"><div class="sc-ico">💵</div><div class="sc-lbl">Total Qty</div><div class="sc-val">${totalQty}</div></div>
+      <div class="sc y"><div class="sc-ico">₹</div><div class="sc-lbl">Revenue</div><div class="sc-val" style="font-size:17px">₹${Math.round(totalRevenue).toLocaleString()}</div></div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Photo</th><th>Item Name</th><th>Category</th><th>Brand</th>
+          <th>Qty Sold</th><th>Revenue ₹</th><th>Last Sale</th><th>Cur. Stock</th>
+        </tr></thead>
+        <tbody>${soldEntries.map(([name,sd])=>{
+          const master=DB.master.find(i=>i.itemName===name);
+          const img=DB.images[master?.article||name];
+          const lastDate=sd.dates.sort().reverse()[0];
+          return `<tr onclick="openItem('${esc(name)}')" style="cursor:pointer" onmouseover="this.style.background='rgba(99,102,241,.05)'" onmouseout="this.style.background=''">
+            <td><div style="width:42px;height:42px;border-radius:7px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px">${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}</div></td>
+            <td style="font-size:12px"><strong>${name}</strong></td>
+            <td><span class="bx bcat">${master?.category||'—'}</span></td>
+            <td><span class="bx bbr">${master?.brand||'—'}</span></td>
+            <td style="text-align:center"><strong style="color:var(--acc);font-size:13px">${sd.qty}</strong></td>
+            <td style="font-weight:700">₹${Math.round(sd.revenue).toLocaleString()}</td>
+            <td style="font-size:11px;color:var(--t3)">${lastDate?new Date(lastDate).toLocaleDateString('en-IN'):'—'}</td>
+            <td class="${(master?.stock||0)<=0?'cr':(master?.stock||0)<=3?'cy':'cg'}">${master?.stock??'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ── SKU Photo View: grid of all articles for this party with photos ── */
+function renderPbr2Sku(){
+  const wrap = document.getElementById('pbrContent-brands');
+  if(!wrap) return;
+  let tabEl = null;
+  if(!tabEl){ tabEl=document.createElement('div'); tabEl.id='pbr2TabContent'; wrap.appendChild(tabEl); }
+
+  const cat   = _selCategory || '';
+  const items = DB.master.filter(i=>i.partyNo===_selParty&&(!cat||i.category===cat));
+  const groups = getGroups(items);
+  const entries = Object.entries(groups).sort((a,b)=>b[1].totalStock-a[1].totalStock);
+  const soldMap = Object.fromEntries(DB.sold.map(s=>[s.itemName,s.salesQty]));
+
+  if(!entries.length){
+    tabEl.innerHTML='<div class="empty" style="padding:30px">No articles found for this party.</div>';
+    return;
+  }
+
+  // Filter bar
+  const cats = [...new Set(items.map(i=>i.category))].sort();
+
+  tabEl.innerHTML=`
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+      <input id="skuSearchQ" placeholder="🔍 Search article…" oninput="filterSkuGrid()" style="flex:1;min-width:150px">
+      <select id="skuCatFilter" onchange="filterSkuGrid()" style="min-width:130px">
+        <option value="">All Categories</option>
+        ${cats.map(c=>`<option value="${esc(c)}">${c}</option>`).join('')}
+      </select>
+      <select id="skuStockFilter" onchange="filterSkuGrid()" style="min-width:120px">
+        <option value="">All Stock</option>
+        <option value="in">In Stock</option>
+        <option value="out">Out of Stock</option>
+        <option value="low">Low ≤3</option>
+      </select>
+      <span style="font-size:12px;color:var(--t3)">${entries.length} articles</span>
+    </div>
+    <div id="skuGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px">
+      ${renderSkuCards(entries, soldMap)}
+    </div>`;
+}
+
+function renderSkuCards(entries, soldMap){
+  return entries.map(([k,g])=>{
+    const img=DB.images[k];
+    const totalSold=g.items.reduce((s,i)=>s+(soldMap[i.itemName]||0),0);
+    const stockCls=g.totalStock<=0?'cr':g.totalStock<=3?'cy':'cg';
+    const allSizes=[...g.sizes].join(' · ');
+    const allColors=[...g.colors];
+    return `<div id="skuCard_${esc(k)}" style="background:var(--card);border:1px solid var(--bdr);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .18s" onclick="openGroup('${esc(k)}')" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div style="height:120px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;position:relative">
+        ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="opacity:.4">👗</span>'}
+        <div style="position:absolute;top:5px;right:5px;background:${g.totalStock<=0?'var(--red)':g.totalStock<=3?'var(--yel)':'var(--grn)'};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">${g.totalStock<=0?'OUT':g.totalStock+' pcs'}</div>
+        ${!img?`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 6px;cursor:pointer">📷 Add</button>`:`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 5px;cursor:pointer">📷</button>`}
+      </div>
+      <div style="padding:9px 10px">
+        <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">${k}</div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:5px">${g.category}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px">
+          ${allColors.slice(0,4).map(c=>`<span style="width:12px;height:12px;border-radius:50%;background:${csw(c)};display:inline-block;border:1px solid var(--bdr)" title="${c}"></span>`).join('')}
+          ${allColors.length>4?`<span style="font-size:9px;color:var(--t3)">+${allColors.length-4}</span>`:''}
+        </div>
+        <div style="font-size:9.5px;color:var(--t3);margin-bottom:6px">${allSizes||'—'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;font-weight:700;color:var(--acc)">₹${g.salePrice}</span>
+          ${totalSold?`<span style="font-size:10px;color:var(--grn)">📤${totalSold} sold</span>`:''}
+        </div>
+        <button class="btn bg sm" style="width:100%;justify-content:center;margin-top:6px;font-size:10px;padding:4px" onclick="event.stopPropagation();quickOrderArticle('${esc(k)}')">📋 Quick Order</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterSkuGrid(){
+  const q   = document.getElementById('skuSearchQ')?.value.toLowerCase()||'';
+  const cat = document.getElementById('skuCatFilter')?.value||'';
+  const stk = document.getElementById('skuStockFilter')?.value||'';
+  const soldMap = Object.fromEntries(DB.sold.map(s=>[s.itemName,s.salesQty]));
+  const items = DB.master.filter(i=>i.partyNo===_selParty);
+  const groups = getGroups(items);
+  const entries = Object.entries(groups).filter(([k,g])=>{
+    if(q && !k.toLowerCase().includes(q)) return false;
+    if(cat && g.category!==cat) return false;
+    if(stk==='in'  && g.totalStock<=0) return false;
+    if(stk==='out' && g.totalStock>0) return false;
+    if(stk==='low' && !(g.totalStock>0&&g.totalStock<=3)) return false;
+    return true;
+  }).sort((a,b)=>b[1].totalStock-a[1].totalStock);
+  const grid=document.getElementById('skuGrid');
+  if(grid) grid.innerHTML=renderSkuCards(entries,soldMap);
+}
+
+/* ═══════════════════════════════════════════════
+   PARTY & BRAND VIEW — ENHANCED
+   Tabs: Brands | Articles | Sold | Returns
+   Step 3: Swipe/photo article cards
+═══════════════════════════════════════════════ */
+let _pbrTab = 'brands';
+
+function setPbrTab(tab, el){
+  _pbrTab = tab;
+  document.querySelectorAll('[id^="pbrTab-"]').forEach(b=>b.classList.remove('A'));
+  document.querySelectorAll('[id^="pbrContent-"]').forEach(d=>d.style.display='none');
+  if(el) el.classList.add('A');
+  const c=document.getElementById('pbrContent-'+tab);
+  if(c) c.style.display='block';
+  if(tab==='articles') renderPartyArticles();
+  if(tab==='sold')     renderPartySold();
+  if(tab==='returns')  renderPartyReturns();
+}
+
+/* ── Article Card Grid (photo + sizes + stock) ── */
+function renderPartyArticles(){
+  const q   = (document.getElementById('pbrArtSearch')?.value||'').toLowerCase();
+  const flt = document.getElementById('pbrArtFilter')?.value||'';
+  const soldMap = Object.fromEntries(DB.sold.map(s=>[s.itemName,s.salesQty]));
+  const items = DB.master.filter(i=>{
+    if(i.partyNo!==_selParty) return false;
+    if(i.isPurchaseReturn) return false;
+    if(q && !i.article.toLowerCase().includes(q) && !i.itemName.toLowerCase().includes(q)) return false;
+    if(flt==='in'  && i.stock<=0) return false;
+    if(flt==='out' && i.stock>0)  return false;
+    if(flt==='low' && (i.stock<=0||i.stock>3)) return false;
+    return true;
+  });
+  const groups = getGroups(items);
+  const el = document.getElementById('pbrArticleGrid'); if(!el) return;
+  if(!Object.keys(groups).length){
+    el.innerHTML='<div class="empty" style="padding:20px">No articles found</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(groups).map(([key,g])=>{
+    const img = DB.images[key];
+    const soldQty = g.items.reduce((s,i)=>s+(soldMap[i.itemName]||0),0);
+    const inStock = g.items.filter(i=>i.stock>0).length;
+    const outStock= g.items.filter(i=>i.stock<=0).length;
+    const stkCls  = g.totalStock<=0?'cr':g.totalStock<=3?'cy':'cg';
+    const allSizes= [...new Set(g.items.map(i=>i.size||'F'))].sort();
+    const colorMap={};
+    g.items.forEach(i=>{
+      if(!colorMap[i.color]) colorMap[i.color]={total:0,in:0};
+      colorMap[i.color].total++;
+      if(i.stock>0) colorMap[i.color].in++;
+    });
+    return `<div style="background:var(--card);border:1.5px solid ${g.totalStock>3?'var(--bdr)':g.totalStock>0?'rgba(245,158,11,.4)':'rgba(239,68,68,.3)'};border-radius:13px;overflow:hidden;cursor:pointer;transition:all .18s;display:flex;flex-direction:column" onclick="selectBrand('${esc(g.brand||'IMP')}');showStep3()" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.15)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <!-- Photo -->
+      <div style="height:130px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;position:relative">
+        ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}
+        <span class="bx ${stkCls}" style="position:absolute;top:6px;right:6px;font-size:10px">${g.totalStock<=0?'OUT':g.totalStock+' pcs'}</span>
+        ${soldQty>0?`<span style="position:absolute;top:6px;left:6px;background:rgba(16,185,129,.85);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px">📤 ${soldQty}</span>`:''}
+      </div>
+      <!-- Info -->
+      <div style="padding:9px 10px;flex:1;display:flex;flex-direction:column;gap:4px">
+        <div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${key}">${key}</div>
+        <div style="font-size:10px;color:var(--t3)">${g.category} · <span class="bx bbr" style="font-size:9px">${g.brand||'—'}</span></div>
+        <!-- Size pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px">
+          ${allSizes.map(sz=>{
+            const sItems=g.items.filter(i=>(i.size||'F')===sz);
+            const tot=sItems.reduce((s,i)=>s+i.stock,0);
+            return `<span style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;background:${tot>0?'rgba(16,185,129,.15)':'rgba(239,68,68,.1)'};color:${tot>0?'var(--grn)':'var(--red)'};border:1px solid ${tot>0?'rgba(16,185,129,.3)':'rgba(239,68,68,.25)'}">${sz}${tot>0?' '+tot:''}</span>`;
+          }).join('')}
+        </div>
+        <!-- Color dots -->
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:2px">
+          ${Object.entries(colorMap).slice(0,8).map(([clr,d])=>`<span title="${clr}: ${d.in}/${d.total}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${csw(clr)};border:1.5px solid rgba(0,0,0,.15);opacity:${d.in>0?1:.4}"></span>`).join('')}
+        </div>
+        <!-- Price -->
+        <div style="display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:11px;font-weight:700;color:var(--acc)">₹${g.salePrice}</span>
+          <button class="btn bg sm" style="padding:2px 7px;font-size:9px" onclick="event.stopPropagation();quickOrderArticle('${esc(key)}')">📋</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Sold Items for this party ── */
+function renderPartySold(){
+  const el  = document.getElementById('pbrSoldList'); if(!el) return;
+  const sumEl= document.getElementById('pbrSoldSummary');
+  const q   = (document.getElementById('pbrSoldSearch')?.value||'').toLowerCase();
+  const grp = document.getElementById('pbrSoldGroup')?.value  || 'article';
+  const cat = document.getElementById('pbrSoldCat')?.value    || '';
+  const brd = document.getElementById('pbrSoldBrand')?.value  || '';
+  const stk = document.getElementById('pbrSoldStock')?.value  || '';
+  const srt = document.getElementById('pbrSoldSort')?.value   || 'soldDesc';
+
+  const soldMap = Object.fromEntries(DB.sold.map(s=>[s.itemName,s.salesQty]));
+
+  // All sold items for this party (unfiltered) — for populating dropdowns
+  const allPartyItems = DB.master.filter(i=>i.partyNo===_selParty && soldMap[i.itemName]);
+  const availCats  = [...new Set(allPartyItems.map(i=>i.category))].sort();
+  const availBrands= [...new Set(allPartyItems.filter(i=>!cat||i.category===cat).map(i=>i.brand))].sort();
+
+  // Populate category dropdown
+  const catSel=document.getElementById('pbrSoldCat');
+  if(catSel && catSel.options.length<=1){
+    availCats.forEach(c=>catSel.add(new Option(c,c)));
+  }
+  // Rebuild brand dropdown based on selected category
+  const brdSel=document.getElementById('pbrSoldBrand');
+  if(brdSel){
+    const curBrd=brdSel.value;
+    brdSel.innerHTML='<option value="">All Brands</option>';
+    availBrands.forEach(b=>brdSel.add(new Option(b,b)));
+    if(availBrands.includes(curBrd)) brdSel.value=curBrd;
+  }
+
+  // Render category chip strip
+  const chipsEl=document.getElementById('pbrSoldCatChips');
+  if(chipsEl){
+    chipsEl.innerHTML=`<span style="font-size:10px;color:var(--t3);font-weight:600;line-height:24px;margin-right:4px">Category:</span>`
+      +[{v:'',l:'All'},...availCats.map(c=>({v:c,l:c}))].map(({v,l})=>`
+        <button onclick="document.getElementById('pbrSoldCat').value='${esc(v)}';rebuildPbrBrandDropdown();renderPartySold()"
+          style="padding:3px 10px;border-radius:20px;border:1.5px solid ${cat===v?'var(--acc)':'var(--bdr)'};background:${cat===v?'rgba(99,102,241,.15)':'var(--bg3)'};color:${cat===v?'var(--acc)':'var(--t2)'};font-size:11px;font-weight:${cat===v?'700':'500'};cursor:pointer;transition:all .15s"
+          onmouseover="this.style.borderColor='var(--acc)'" onmouseout="if('${esc(v)}'!=='${esc(cat)}')this.style.borderColor='var(--bdr)'">${l}</button>`
+      ).join('');
+  }
+
+  let items = DB.master.filter(i=>{
+    if(i.partyNo!==_selParty) return false;
+    if(!soldMap[i.itemName])  return false;
+    if(cat && i.category!==cat) return false;
+    if(brd && i.brand!==brd)    return false;
+    if(q && !i.article.toLowerCase().includes(q) &&
+            !i.category.toLowerCase().includes(q) &&
+            !i.brand.toLowerCase().includes(q) &&
+            !i.itemName.toLowerCase().includes(q)) return false;
+    if(stk==='in'  && i.stock<=0) return false;
+    if(stk==='out' && i.stock>0)  return false;
+    if(stk==='low' && (i.stock<=0||i.stock>3)) return false;
+    return true;
+  });
+
+  items = [...items].sort((a,b)=>{
+    const sa=soldMap[a.itemName]||0, sb=soldMap[b.itemName]||0;
+    if(srt==='soldDesc')  return sb-sa;
+    if(srt==='soldAsc')   return sa-sb;
+    if(srt==='stockAsc')  return a.stock-b.stock;
+    if(srt==='nameAsc')   return a.article.localeCompare(b.article);
+    if(srt==='priceDesc') return b.salePrice-a.salePrice;
+    return sb-sa;
+  });
+
+  if(!items.length){
+    el.innerHTML='<div class="empty" style="padding:24px">No sold items match filters</div>';
+    if(sumEl) sumEl.innerHTML='';
+    return;
+  }
+
+  const totalSoldQty  = items.reduce((s,i)=>s+(soldMap[i.itemName]||0),0);
+  const totalSoldMrp  = items.reduce((s,i)=>s+(soldMap[i.itemName]||0)*(i.mrp||i.salePrice),0);
+  const totalSoldCost = items.reduce((s,i)=>s+(soldMap[i.itemName]||0)*(i.costPer||0),0);
+  const totalCurStock = items.reduce((s,i)=>s+i.stock,0);
+  const grossProfit   = totalSoldMrp - totalSoldCost;
+
+  if(sumEl) sumEl.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap;background:var(--bg3);border-radius:9px;padding:9px 12px;margin-bottom:10px;font-size:12px">
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Items</span><strong>${items.length}</strong></div>
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Units Sold</span><strong style="color:var(--acc)">${totalSoldQty}</strong></div>
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Sold MRP</span><strong style="color:var(--grn)">₹${Math.round(totalSoldMrp).toLocaleString()}</strong></div>
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Sold Cost</span><strong style="color:var(--rose)">₹${Math.round(totalSoldCost).toLocaleString()}</strong></div>
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Gross Profit</span><strong style="color:${grossProfit>=0?'var(--grn)':'var(--red)'}">${grossProfit>=0?'+':''}₹${Math.round(grossProfit).toLocaleString()}</strong></div>
+    <div><span style="font-size:10px;color:var(--t3);text-transform:uppercase;display:block">Cur.Stock</span><strong class="${totalCurStock<=0?'cr':totalCurStock<=10?'cy':'cg'}">${totalCurStock}</strong></div>
+  </div>`;
+
+  // ── BY ARTICLE: Rich card grid with photo + color×size sold/stock matrix ──
+  if(grp==='article'){
+    const artMap={};
+    items.forEach(i=>{
+      const k=i.article;
+      if(!artMap[k])artMap[k]={items:[],sold:0,stock:0,cat:i.category,brand:i.brand,salePrice:i.salePrice,mrp:i.mrp||i.salePrice,costPer:i.costPer};
+      artMap[k].items.push(i);
+      artMap[k].sold +=(soldMap[i.itemName]||0);
+      artMap[k].stock+=i.stock;
+    });
+    const artRows=Object.entries(artMap).sort((a,b)=>b[1].sold-a[1].sold);
+
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">${artRows.map(([art,d])=>{
+      const img=DB.images[art];
+      const stkCls=d.stock<=0?'cr':d.stock<=3?'cy':'cg';
+      const soldPct=d.sold+d.stock>0?Math.round(d.sold/(d.sold+d.stock)*100):0;
+      // Build color × size matrix with sold qty + stock
+      const colorMap={};
+      d.items.forEach(i=>{
+        const c=i.color||'—';
+        if(!colorMap[c])colorMap[c]={sizes:{},soldTotal:0};
+        colorMap[c].sizes[i.size||'F']={stock:i.stock,sold:soldMap[i.itemName]||0,dno:i.dno,item:i};
+        colorMap[c].soldTotal+=(soldMap[i.itemName]||0);
+      });
+      const allSizes=[...new Set(d.items.map(i=>i.size||'F'))].sort();
+
+      return `<div style="background:var(--card);border:1px solid var(--bdr);border-radius:13px;overflow:hidden;transition:box-shadow .18s" onmouseover="this.style.boxShadow='0 4px 18px rgba(0,0,0,.12)'" onmouseout="this.style.boxShadow=''">
+        <!-- Header: photo + article info -->
+        <div style="display:grid;grid-template-columns:80px 1fr;gap:0">
+          <div style="height:80px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;cursor:pointer" onclick="openGroup('${esc(art)}')">
+            ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}
+          </div>
+          <div style="padding:9px 12px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div style="font-size:13px;font-weight:800;color:var(--acc);cursor:pointer" onclick="openGroup('${esc(art)}')">${art}</div>
+                <div style="font-size:10px;color:var(--t3)"><span class="bx bcat" style="font-size:9px">${d.cat}</span> <span class="bx bbr" style="font-size:9px">${d.brand}</span></div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:16px;font-weight:900;color:var(--acc)">${d.sold}</div>
+                <div style="font-size:9px;color:var(--t3)">sold</div>
+              </div>
+            </div>
+            <!-- Stock + sold bar -->
+            <div style="margin-top:5px">
+              <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">
+                <span class="${stkCls}">${d.stock<=0?'All Sold Out':d.stock+' left'}</span>
+                <span style="color:var(--t3)">₹${d.mrp} MRP</span>
+              </div>
+              <div style="height:4px;background:var(--bg3);border-radius:3px;overflow:hidden">
+                <div style="height:100%;background:var(--acc);width:${soldPct}%;border-radius:3px"></div>
+              </div>
+              <div style="font-size:9px;color:var(--t3);margin-top:1px">${soldPct}% sold · Cost ₹${d.costPer}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Color × Size Matrix -->
+        <div style="padding:8px 12px;border-top:1px solid var(--bdr);background:var(--bg3)">
+          ${Object.entries(colorMap).map(([clr,cd])=>`
+            <div style="margin-bottom:6px">
+              <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:4px;display:flex;align-items:center;gap:4px">
+                ${cswDot(clr,9)}<span>${clr}</span>
+                <span style="color:var(--acc);font-size:10px;font-weight:700">📤${cd.soldTotal}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                ${allSizes.map(sz=>{
+                  const sd=cd.sizes[sz];
+                  if(!sd)return `<div style="opacity:.2;padding:3px 7px;border-radius:5px;border:1px solid var(--bdr);font-size:10px;color:var(--t3)">${sz}</div>`;
+                  const hasSold=sd.sold>0, hasStk=sd.stock>0;
+                  const bg=hasSold&&hasStk?'rgba(99,102,241,.12)':hasSold?'rgba(239,68,68,.08)':hasStk?'rgba(16,185,129,.1)':'var(--bg3)';
+                  const bdr2=hasSold&&hasStk?'rgba(99,102,241,.4)':hasSold?'rgba(239,68,68,.3)':hasStk?'rgba(16,185,129,.35)':'var(--bdr)';
+                  return `<div onclick="addToOrderCart(${JSON.stringify(sd.item).replace(/"/g,'&quot;')},1)" title="D.no:${sd.dno} · Click=Add to Order" style="padding:4px 8px;border-radius:6px;border:1.5px solid ${bdr2};background:${bg};cursor:pointer;text-align:center;min-width:40px">
+                    <div style="font-size:11px;font-weight:800">${sz}</div>
+                    ${hasSold?`<div style="font-size:9px;font-weight:700;color:var(--acc)">📤${sd.sold}</div>`:''}
+                    <div style="font-size:9px;color:${hasStk?'var(--grn)':'var(--red)'}">${hasStk?sd.stock+'✓':'OUT'}</div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+
+  // ── BY ITEM: Full detail flat table ──
+  } else if(grp==='item'){
+    el.innerHTML=`<div class="tw"><table>
+      <thead><tr>
+        <th>Article</th><th>Category</th><th>Brand</th>
+        <th>Color</th><th>Size</th><th>D.no</th>
+        <th>Sold</th><th>Stock</th>
+        <th>Sale ₹</th><th>Cost ₹</th><th>MRP ₹</th><th>Sold MRP ₹</th>
+      </tr></thead>
+      <tbody>${items.map(i=>{
+        const sq=soldMap[i.itemName]||0;
+        return `<tr onclick="openGroup('${esc(i.article)}')" style="cursor:pointer" onmouseover="this.style.background='rgba(99,102,241,.05)'" onmouseout="this.style.background=''">
+          <td style="font-size:12px;font-weight:700">${i.article}</td>
+          <td><span class="bx bcat">${i.category}</span></td>
+          <td><span class="bx bbr">${i.brand}</span></td>
+          <td>${cswDot(i.color)}<span class="bx bclr">${i.color}</span></td>
+          <td><span class="bx bsz">${i.size}</span></td>
+          <td style="font-size:10px;font-family:monospace;color:var(--cyn)">${i.dno}</td>
+          <td style="font-weight:800;color:var(--acc)">${sq}</td>
+          <td class="${i.stock<=0?'cr':i.stock<=3?'cy':'cg'}">${i.stock<=0?'OUT':i.stock}</td>
+          <td style="font-weight:700">₹${i.salePrice}</td>
+          <td style="color:var(--rose)">₹${i.costPer}</td>
+          <td>₹${i.mrp||i.salePrice}</td>
+          <td style="font-weight:700;color:var(--grn)">₹${Math.round(sq*(i.mrp||i.salePrice)).toLocaleString()}</td>
+        </tr>`;
+      }).join('')}</tbody>
+      <tfoot><tr style="background:var(--bg3);font-weight:700;font-size:12px">
+        <td colspan="6" style="padding:8px 10px">TOTAL (${items.length})</td>
+        <td style="color:var(--acc)">${totalSoldQty}</td>
+        <td class="${totalCurStock<=0?'cr':'cg'}">${totalCurStock}</td>
+        <td colspan="3"></td>
+        <td style="color:var(--grn)">₹${Math.round(totalSoldMrp).toLocaleString()}</td>
+      </tfoot>
+    </table></div>`;
+
+  // ── BY CATEGORY or BRAND: Summary with click to drill ──
+  } else {
+    const gKey=grp==='category'?'category':'brand';
+    const gMap={};
+    items.forEach(i=>{
+      const k=i[gKey]||'—';
+      if(!gMap[k])gMap[k]={items:[],sold:0,stock:0,soldMrp:0,soldCost:0};
+      gMap[k].items.push(i);
+      gMap[k].sold +=(soldMap[i.itemName]||0);
+      gMap[k].stock+=i.stock;
+      gMap[k].soldMrp +=(soldMap[i.itemName]||0)*(i.mrp||i.salePrice);
+      gMap[k].soldCost+=(soldMap[i.itemName]||0)*(i.costPer||0);
+    });
+    const gRows=Object.entries(gMap).sort((a,b)=>b[1].sold-a[1].sold);
+    el.innerHTML=`<div class="tw"><table>
+      <thead><tr>
+        <th>${grp==='category'?'Category':'Brand'}</th>
+        <th>Articles</th><th>Variants</th>
+        <th>Units Sold</th><th>Cur.Stock</th>
+        <th>Sold MRP ₹</th><th>Sold Cost ₹</th><th>Profit ₹</th>
+      </tr></thead>
+      <tbody>${gRows.map(([k,d])=>{
+        const articles=[...new Set(d.items.map(i=>i.article))].length;
+        const gp=d.soldMrp-d.soldCost;
+        return`<tr onclick="document.getElementById('pbrSoldSearch').value='${esc(k)}';document.getElementById('pbrSoldGroup').value='article';renderPartySold()" style="cursor:pointer" onmouseover="this.style.background='rgba(99,102,241,.05)'" onmouseout="this.style.background=''">
+          <td>${grp==='category'?`<span class="bx bcat">${k}</span>`:`<span class="bx bbr">${k}</span>`}</td>
+          <td style="font-weight:600">${articles}</td>
+          <td>${d.items.length}</td>
+          <td style="font-weight:800;color:var(--acc)">${d.sold}</td>
+          <td class="${d.stock<=0?'cr':d.stock<=3?'cy':'cg'}">${d.stock<=0?'All Out':d.stock}</td>
+          <td style="color:var(--grn);font-weight:700">₹${Math.round(d.soldMrp).toLocaleString()}</td>
+          <td style="color:var(--rose)">₹${Math.round(d.soldCost).toLocaleString()}</td>
+          <td style="font-weight:700;color:${gp>=0?'var(--grn)':'var(--red)'}">${gp>=0?'+':''}₹${Math.round(gp).toLocaleString()}</td>
+        </tr>`;
+      }).join('')}</tbody>
+      <tfoot><tr style="background:var(--bg3);font-weight:700">
+        <td colspan="3" style="padding:8px 10px">TOTAL (${gRows.length} groups)</td>
+        <td style="color:var(--acc)">${totalSoldQty}</td>
+        <td class="${totalCurStock<=0?'cr':'cg'}">${totalCurStock}</td>
+        <td style="color:var(--grn)">₹${Math.round(totalSoldMrp).toLocaleString()}</td>
+        <td style="color:var(--rose)">₹${Math.round(totalSoldCost).toLocaleString()}</td>
+        <td style="color:var(--grn)">₹${Math.round(grossProfit).toLocaleString()}</td>
+      </tfoot>
+    </table></div>`;
+  }
+}
+
+function rebuildPbrBrandDropdown(){
+  const cat=document.getElementById('pbrSoldCat')?.value||'';
+  const soldMap=Object.fromEntries(DB.sold.map(s=>[s.itemName,s.salesQty]));
+  const allItems=DB.master.filter(i=>i.partyNo===_selParty&&soldMap[i.itemName]&&(!cat||i.category===cat));
+  const brands=[...new Set(allItems.map(i=>i.brand))].sort();
+  const brdSel=document.getElementById('pbrSoldBrand');
+  if(!brdSel) return;
+  brdSel.innerHTML='<option value="">All Brands</option>';
+  brands.forEach(b=>brdSel.add(new Option(b,b)));
+}
+
+function clearPbrSoldFilters(){
+  ['pbrSoldSearch'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pbrSoldGroup','pbrSoldStock','pbrSoldSort'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  renderPartySold();
+}
+
+/* ── Purchase Returns for this party ── */
+function renderPartyReturns(){
+  const el = document.getElementById('pbrReturnList'); if(!el) return;
+  const items = DB.master.filter(i=>i.partyNo===_selParty && i.isPurchaseReturn)
+    .sort((a,b)=>a.article.localeCompare(b.article));
+  if(!items.length){
+    el.innerHTML='<div class="empty" style="padding:20px;color:var(--grn)">✅ No purchase returns for this party</div>';
+    return;
+  }
+  const totalCost=items.reduce((s,i)=>s+(Math.abs(i.stock)||1)*(i.costPer||0),0);
+  el.innerHTML=`<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:9px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap">
+    <div><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Returned Items</div><strong class="cr">${items.length}</strong></div>
+    <div><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Est. Return Value</div><strong>₹${Math.round(totalCost).toLocaleString()}</strong></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Article</th><th>Category</th><th>Color</th><th>Size</th><th>Brand</th><th>D.no</th><th>Stock</th><th>Purchase Date</th><th>Cost ₹</th></tr></thead>
+    <tbody>${items.map(i=>`<tr>
+      <td style="font-size:12px;font-weight:700">${i.article}</td>
+      <td><span class="bx bcat">${i.category}</span></td>
+      <td>${cswDot(i.color)}<span class="bx bclr">${i.color}</span></td>
+      <td><span class="bx bsz">${i.size}</span></td>
+      <td><span class="bx bbr">${i.brand}</span></td>
+      <td style="font-size:10px;font-family:monospace;color:var(--cyn)">${i.dno}</td>
+      <td class="cr">${i.stock}</td>
+      <td style="font-size:11px">${i.purchaseDate||'—'}</td>
+      <td style="color:var(--rose)">₹${i.costPer}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   INDEXED DB — Photo Storage (unlimited)
+   Replaces localStorage for DB.images
+   DB name: rosyPhotos  Store: photos  Key: articleName
+═══════════════════════════════════════════════ */
+const IDB_NAME='rosyPhotos', IDB_STORE='photos', IDB_VER=1;
+
+function openPhotoDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(IDB_NAME,IDB_VER);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains(IDB_STORE))
+        db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess=e=>res(e.target.result);
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+
+function savePhoto(key,dataUrl){
+  return openPhotoDB().then(db=>{
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).put(dataUrl,key);
+      tx.oncomplete=()=>res();
+      tx.onerror=e=>rej(e.target.error);
+    });
+  });
+}
+
+function deletePhoto(key){
+  return openPhotoDB().then(db=>{
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).delete(key);
+      tx.oncomplete=()=>res();
+      tx.onerror=e=>rej(e.target.error);
+    });
+  });
+}
+
+function loadAllPhotos(){
+  return openPhotoDB().then(db=>{
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_STORE,'readonly');
+      const store=tx.objectStore(IDB_STORE);
+      const result={};
+      store.openCursor().onsuccess=e=>{
+        const cursor=e.target.result;
+        if(cursor){result[cursor.key]=cursor.value;cursor.continue();}
+        else res(result);
+      };
+      tx.onerror=e=>rej(e.target.error);
+    });
+  }).catch(()=>{
+    // Fallback: return images from DB if IndexedDB fails
+    return DB.images||{};
+  });
+}
+
+function exportAllPhotos(){
+  return loadAllPhotos();
+}
+
+function importAllPhotos(imagesObj){
+  // Save each photo to IndexedDB
+  const keys=Object.keys(imagesObj||{});
+  if(!keys.length) return Promise.resolve(0);
+  return openPhotoDB().then(db=>{
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_STORE,'readwrite');
+      const store=tx.objectStore(IDB_STORE);
+      keys.forEach(k=>store.put(imagesObj[k],k));
+      tx.oncomplete=()=>res(keys.length);
+      tx.onerror=e=>rej(e.target.error);
+    });
+  });
+}
+
+function clearAllPhotos(){
+  return openPhotoDB().then(db=>{
+    return new Promise((res,rej)=>{
+      const tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).clear();
+      tx.oncomplete=()=>res();
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   BARCODE / LABEL EXPORT
+   Format: SKU | Code | MRP | Qty | D.no | Category | Barcode
+   SKU     = itemName  (article-color-size)
+   Code    = rawCode   (party-brand-rate)
+   MRP     = mrp or salePrice
+   Qty     = stock
+   D.no    = dno
+   Category= category
+   Barcode = itemCode (purchase code from col3)
+═══════════════════════════════════════════════ */
+let BC_ITEMS = {}; // { itemName: { item, qty, selected } }
+
+function bcInit(){
+  const parties=[...new Set(DB.master.map(i=>i.partyNo).filter(Boolean))].sort((a,b)=>+a-+b);
+  const brands=[...new Set(DB.master.map(i=>i.brand).filter(Boolean))].sort();
+  const cats=[...new Set(DB.master.map(i=>i.category).filter(Boolean))].sort();
+
+  // Left panel filter dropdowns
+  const bp=document.getElementById('bcParty');
+  if(bp&&bp.options.length<=1) parties.forEach(p=>bp.add(new Option('Party '+p,p)));
+  const bb=document.getElementById('bcBrand');
+  if(bb&&bb.options.length<=1) brands.forEach(b=>bb.add(new Option(b,b)));
+  const bc=document.getElementById('bcCategory');
+  if(bc&&bc.options.length<=1) cats.forEach(c=>bc.add(new Option(c,c)));
+
+  // new product form removed
+
+  // Default: show OOS items
+  const sf=document.getElementById('bcStockFilter');
+  if(sf&&sf.value==='') sf.value='out';
+
+  bcRenderTable();
+  bcSearchItems(); // show initial OOS results
+}
+
+function bcSearchItems(){
+  const q   = (document.getElementById('bcSearch')?.value||'').toLowerCase();
+  const par = document.getElementById('bcParty')?.value||'';
+  const br  = document.getElementById('bcBrand')?.value||'';
+  const cat = document.getElementById('bcCategory')?.value||'';
+  const stk = document.getElementById('bcStockFilter')?.value||'';
+  const res = document.getElementById('bcSearchResults');
+  if(!res) return;
+
+  if(!q && !par && !br && !cat && !stk){res.style.display='none';return;}
+
+  // Filter items
+  const items=DB.master.filter(i=>{
+    if(i.isPurchaseReturn) return false;
+    if(q && !i.itemName.toLowerCase().includes(q) && !i.article.toLowerCase().includes(q) && !i.dno.includes(q) && !i.brand.toLowerCase().includes(q) && !i.category.toLowerCase().includes(q)) return false;
+    if(par && i.partyNo!==par) return false;
+    if(br  && i.brand!==br)    return false;
+    if(cat && i.category!==cat) return false;
+    if(stk==='in'  && i.stock<=0) return false;
+    if(stk==='out' && i.stock>0)  return false;
+    return true;
+  });
+
+  if(!items.length){res.innerHTML='<div style="padding:12px;font-size:12px;color:var(--t3);text-align:center">No items found</div>';res.style.display='block';return;}
+
+  // Group by article
+  const groups=getGroups(items);
+  const artEntries=Object.entries(groups).slice(0,30);
+
+  res.style.display='block';
+  res.innerHTML=artEntries.map(([art,g])=>{
+    const colorMap={};
+    g.items.forEach(i=>{
+      const c=i.color||'—';
+      if(!colorMap[c])colorMap[c]={sizes:{},totalStock:0};
+      colorMap[c].sizes[i.size||'F']={stock:i.stock,item:i};
+      colorMap[c].totalStock+=i.stock;
+    });
+    const allSizes=[...new Set(g.items.map(i=>i.size||'F'))].sort();
+    const inStk=g.items.filter(i=>i.stock>0).length;
+    const outStk=g.items.filter(i=>i.stock<=0).length;
+    const img=DB.images[art];
+    return `<div class="bc-art-row" style="border-bottom:1px solid var(--bdr)">
+      <!-- Article header -->
+      <div style="padding:8px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--bg3)" onclick="bcToggleArt('${esc(art)}')" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='var(--bg3)'">
+        <div style="width:36px;height:36px;border-radius:6px;background:var(--bg2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">
+          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${art}</div>
+          <div style="font-size:10px;color:var(--t3)">${g.category} · <span class="bx bbr" style="font-size:9px">${g.brand||'—'}</span></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px"><span class="cg">${inStk} in</span> <span class="cr">${outStk} out</span></div>
+          <div style="font-size:10px;font-weight:700;color:var(--acc)">₹${g.salePrice}</div>
+        </div>
+        <span id="bc-arr-${esc(art)}" style="color:var(--t3);font-size:14px">▶</span>
+      </div>
+      <!-- Sizes panel (hidden by default) -->
+      <div id="bc-sizes-${esc(art)}" style="display:none;padding:10px 12px;background:var(--card)">
+        <!-- Quick add buttons -->
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="btn bg sm" onclick="event.stopPropagation();bcAddAllSizes('${esc(art)}','all')" style="font-size:11px">+ All Sizes</button>
+          <button class="btn bg sm" onclick="event.stopPropagation();bcAddAllSizes('${esc(art)}','oos')" style="font-size:11px;border-color:var(--red);color:var(--red)">+ OOS Only</button>
+          <button class="btn bg sm" onclick="event.stopPropagation();bcAddAllSizes('${esc(art)}','in')" style="font-size:11px;border-color:var(--grn);color:var(--grn)">+ In-Stock</button>
+        </div>
+        ${Object.entries(colorMap).map(([clr,cd])=>`
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:5px;display:flex;align-items:center;gap:4px">
+              ${cswDot(clr,10)}<span>${clr}</span>
+              <span style="color:var(--t3)">(${cd.totalStock} pcs)</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px">
+              ${allSizes.map(sz=>{
+                const sd=cd.sizes[sz];
+                if(!sd)return `<div style="opacity:.25;padding:5px 9px;border-radius:7px;border:1px solid var(--bdr);font-size:11px;font-weight:700;color:var(--t3);min-width:40px;text-align:center">${sz}<div style="font-size:9px">N/A</div></div>`;
+                const inCart=!!BC_ITEMS[sd.item.itemName];
+                const cls=sd.stock<=0?'rgba(239,68,68,.15)':sd.stock<=3?'rgba(245,158,11,.15)':'rgba(16,185,129,.15)';
+                const bdr=sd.stock<=0?'rgba(239,68,68,.4)':sd.stock<=3?'rgba(245,158,11,.5)':'rgba(16,185,129,.4)';
+                const txtcls=sd.stock<=0?'var(--red)':sd.stock<=3?'var(--yel)':'var(--grn)';
+                return `<div onclick="event.stopPropagation();bcToggleSize('${esc(sd.item.itemName)}')" style="padding:5px 9px;border-radius:7px;border:2px solid ${inCart?'var(--acc)':bdr};background:${inCart?'rgba(99,102,241,.2)':cls};cursor:pointer;min-width:42px;text-align:center;transition:all .15s" id="bc-sz-${esc(sd.item.itemName)}">
+                  <div style="font-size:12px;font-weight:800;color:${inCart?'var(--acc)':'var(--txt)'}">${sz}</div>
+                  <div style="font-size:9px;font-weight:700;color:${inCart?'var(--acc)':txtcls}">${sd.stock<=0?'OUT':sd.stock}</div>
+                  ${inCart?'<div style="font-size:8px;color:var(--acc)">✓</div>':''}
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function bcToggleArt(art){
+  const panel=document.getElementById('bc-sizes-'+art);
+  const arr=document.getElementById('bc-arr-'+art);
+  if(!panel) return;
+  const isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'block';
+  if(arr) arr.textContent=isOpen?'▶':'▼';
+}
+
+function bcToggleSize(itemName){
+  if(BC_ITEMS[itemName]){
+    // Already in list — remove it
+    delete BC_ITEMS[itemName];
+    toast('Removed','ok');
+  } else {
+    const item=DB.master.find(i=>i.itemName===itemName);
+    if(!item) return;
+    BC_ITEMS[itemName]={item:{...item}, qty:Math.max(1,item.stock>0?item.stock:1), selected:true};
+    toast('Added: '+itemName,'ok');
+  }
+  // Refresh the size pill UI in search results
+  const pill=document.getElementById('bc-sz-'+itemName);
+  if(pill){
+    const inCart=!!BC_ITEMS[itemName];
+    const i=DB.master.find(x=>x.itemName===itemName);
+    const bdr=i.stock<=0?'rgba(239,68,68,.4)':i.stock<=3?'rgba(245,158,11,.5)':'rgba(16,185,129,.4)';
+    const cls=i.stock<=0?'rgba(239,68,68,.15)':i.stock<=3?'rgba(245,158,11,.15)':'rgba(16,185,129,.15)';
+    pill.style.borderColor=inCart?'var(--acc)':bdr;
+    pill.style.background=inCart?'rgba(99,102,241,.2)':cls;
+    // Re-render pill content
+    const sz=i.size||'F';
+    const txtcls=i.stock<=0?'var(--red)':i.stock<=3?'var(--yel)':'var(--grn)';
+    pill.innerHTML=`<div style="font-size:12px;font-weight:800;color:${inCart?'var(--acc)':'var(--txt)'}">${sz}</div>
+      <div style="font-size:9px;font-weight:700;color:${inCart?'var(--acc)':txtcls}">${i.stock<=0?'OUT':i.stock}</div>
+      ${inCart?'<div style="font-size:8px;color:var(--acc)">✓</div>':''}`;
+  }
+  bcRenderTable();
+}
+
+function bcAddAllSizes(art, filter){
+  const g=getGroups()[art]; if(!g) return;
+  let added=0;
+  g.items.forEach(i=>{
+    if(i.isPurchaseReturn) return;
+    if(filter==='oos' && i.stock>0) return;
+    if(filter==='in'  && i.stock<=0) return;
+    BC_ITEMS[i.itemName]={item:{...i}, qty:Math.max(1,i.stock>0?i.stock:1), selected:true};
+    added++;
+  });
+  bcSearchItems(); // refresh pills
+  bcRenderTable();
+  toast(added+' sizes of '+art+' added','ok');
+}
+
+function bcAddItem(itemName){
+  // Legacy - redirect to bcToggleSize
+  bcToggleSize(itemName);
+}
+
+function bcAddAllFiltered(){
+  const q   = (document.getElementById('bcSearch')?.value||'').toLowerCase();
+  const par = document.getElementById('bcParty')?.value||'';
+  const br  = document.getElementById('bcBrand')?.value||'';
+  const cat = document.getElementById('bcCategory')?.value||'';
+  const stk = document.getElementById('bcStockFilter')?.value||'';
+
+  const items=DB.master.filter(i=>{
+    if(i.isPurchaseReturn) return false;
+    if(q && !i.itemName.toLowerCase().includes(q) && !i.article.toLowerCase().includes(q) && !i.brand.toLowerCase().includes(q)) return false;
+    if(par && i.partyNo!==par) return false;
+    if(br  && i.brand!==br)    return false;
+    if(cat && i.category!==cat) return false;
+    if(stk==='in'  && i.stock<=0) return false;
+    if(stk==='out' && i.stock>0)  return false;
+    return true;
+  });
+
+  if(!items.length){toast('No items match filters','err');return;}
+  items.forEach(i=>{ BC_ITEMS[i.itemName]={item:{...i}, qty:i.stock>0?i.stock:1, selected:true}; });
+  bcRenderTable();
+  toast(items.length+' items added','ok');
+}
+
+function bcSelectAll(val){
+  Object.values(BC_ITEMS).forEach(o=>o.selected=val);
+  bcRenderTable();
+}
+
+function bcClear(){
+  BC_ITEMS={};
+  bcRenderTable();
+}
+
+function bcRenderTable(){
+  const items=Object.values(BC_ITEMS);
+  const el=document.getElementById('bcTable'); if(!el) return;
+  const cnt=document.getElementById('bcCount');
+  const footer=document.getElementById('bcExportInfo');
+  const info=document.getElementById('bcExportInfo');
+
+  const selected=items.filter(o=>o.selected);
+  if(cnt) cnt.textContent=items.length;
+
+  const totalQty=selected.reduce((s,o)=>s+o.qty,0);
+  if(footer) footer.textContent=selected.length+' selected · '+totalQty+' total qty';
+  if(info)   info.textContent=selected.length+' rows will be exported · SKU/Code/MRP/Qty/D.no/Category/Barcode';
+
+  if(!items.length){
+    el.innerHTML='<div class="empty" style="padding:30px"><div style="font-size:32px;margin-bottom:8px">🏷️</div><p>Search and add items</p></div>';
+    return;
+  }
+
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0;width:28px">☑</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">SKU (Item Name)</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">Code (Variant)</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">MRP ₹</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">Qty</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">D.no</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">Category</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">Barcode</th>
+      <th style="padding:7px 8px;background:var(--bg3);font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;position:sticky;top:0">✕</th>
+    </tr></thead>
+    <tbody>${items.map(o=>{
+      const i=o.item;
+      const mrp=i.mrp||i.salePrice;
+      const barcode=i.itemCode||'';
+      return `<tr onmouseover="this.style.background='rgba(99,102,241,.04)'" onmouseout="this.style.background=''">
+        <td style="padding:5px 8px;text-align:center"><input type="checkbox" ${o.selected?'checked':''} onchange="BC_ITEMS['${esc(i.itemName)}'].selected=this.checked;bcRenderTable()" style="width:auto;accent-color:var(--acc)"></td>
+        <td style="padding:5px 8px;font-size:11.5px;font-weight:700">${i.itemName}${o.isNew?'<span class="bx" style="background:rgba(99,102,241,.2);color:var(--acc);font-size:9px;margin-left:4px">NEW</span>':''}</td>
+        <td style="padding:5px 8px;font-size:11px;color:var(--t2)">${i.rawCode||'—'}</td>
+        <td style="padding:5px 8px;font-weight:700">₹${mrp}</td>
+        <td style="padding:5px 8px"><input type="number" min="1" value="${o.qty}" onchange="BC_ITEMS['${esc(i.itemName)}'].qty=Math.max(1,parseInt(this.value)||1);bcRenderTable()" style="width:60px;text-align:center;padding:3px 5px;font-size:12px"></td>
+        <td style="padding:5px 8px;font-family:monospace;font-size:11px;color:var(--cyn)">${i.dno||'—'}</td>
+        <td style="padding:5px 8px"><span class="bx bcat" style="font-size:10px">${i.category}</span></td>
+        <td style="padding:5px 8px;font-family:monospace;font-size:11px">${barcode||'—'}</td>
+        <td style="padding:5px 8px;text-align:center"><button onclick="delete BC_ITEMS['${esc(i.itemName)}'];bcRenderTable()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">✕</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function bcGetRows(){
+  return Object.values(BC_ITEMS).filter(o=>o.selected).map(o=>{
+    const i=o.item;
+    return {
+      'SKU':       i.itemName,
+      'Code (Variant)': i.rawCode||'',
+      'MRP (Rs)':  i.mrp||i.salePrice,
+      'Qty':       o.qty,
+      'D.no':      i.dno||'',
+      'Category':  i.category,
+      'Barcode':   i.itemCode||''
+    };
+  });
+}
+
+function bcExportExcel(){
+  const rows=bcGetRows();
+  if(!rows.length){toast('Nothing selected','err');return;}
+
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows, {
+    header:['SKU','Code (Variant)','MRP (Rs)','Qty','D.no','Category','Barcode']
+  });
+
+  // Column widths
+  ws['!cols']=[
+    {wch:32},{wch:22},{wch:10},{wch:6},{wch:8},{wch:20},{wch:16}
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Barcodes');
+  XLSX.writeFile(wb,'ROSY_Barcodes_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('Exported '+rows.length+' rows to Excel ✓','ok');
+}
+
+function bcPrintLabels(){
+  const rows=bcGetRows();
+  if(!rows.length){toast('Nothing selected','err');return;}
+
+  // Generate printable label sheet
+  const sn=CFG.storeName||'ROSY';
+  let html=`<html><head><title>Labels - ${sn}</title><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#fff}
+    .page{padding:8mm}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm}
+    .label{border:1px solid #ccc;border-radius:4px;padding:5px 6px;font-size:9px;break-inside:avoid;min-height:28mm;display:flex;flex-direction:column;justify-content:space-between}
+    .store{font-size:8px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+    .sku{font-size:10px;font-weight:800;color:#1e1b4b;margin-bottom:1px;word-break:break-all}
+    .cat{font-size:8px;color:#666;margin-bottom:3px}
+    .mrp{font-size:13px;font-weight:900;color:#1e1b4b}
+    .mrp-lbl{font-size:7px;color:#888}
+    .barcode{font-family:monospace;font-size:8px;color:#333;letter-spacing:1px;margin-top:3px;border-top:1px solid #eee;padding-top:3px}
+    .dno{font-size:7.5px;color:#888}
+    @media print{@page{margin:8mm;size:A4}body{-webkit-print-color-adjust:exact}}
+  </style></head><body><div class="page"><div class="grid">`;
+
+  rows.forEach(r=>{
+    // Repeat label qty times
+    for(let q=0;q<Math.min(r.Qty,50);q++){
+      html+=`<div class="label">
+        <div>
+          <div class="store">${sn}</div>
+          <div class="sku">${r.SKU}</div>
+          <div class="cat">${r.Category} · ${r['Code (Variant)']||''}</div>
+        </div>
+        <div>
+          <div>
+            <div class="mrp-lbl">MRP (Incl. of all taxes)</div>
+            <div class="mrp">₹${r['MRP (Rs)']}</div>
+          </div>
+          <div class="barcode">${r.Barcode||r['D.no']}</div>
+          <div class="dno">D.no: ${r['D.no']}</div>
+        </div>
+      </div>`;
+    }
+  });
+
+  html+=`</div></div></body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+
+// Close search dropdown when clicking outside
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#bcSearch')&&!e.target.closest('#bcSearchResults')){
+    const r=document.getElementById('bcSearchResults');
+    if(r) r.style.display='none';
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   BARCODE — NEW PRODUCT ENTRY
+═══════════════════════════════════════════════ */
+// _bcSeq removed
+// BC_TEMPLATES removed
+
+// bcAutoBarcode removed (new product form removed)
+
+// bcAddNewProduct removed (new product form removed)
+
+// bcSaveTemplate removed (new product form removed)
+
+// bcRenderTemplates removed (new product form removed)
+
+// bcLoadTemplate removed (new product form removed)
 
 /* ─── INIT ──────────────────────────────────── */
 checkSession();loadSettings();applySettings();applyDvColors();applyStoredTopbarColors();loadDB();renderDash();renderCart();
