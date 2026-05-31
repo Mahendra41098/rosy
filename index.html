@@ -216,6 +216,24 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
 .ch2.bl{bottom:-6px;left:-6px;cursor:sw-resize}.ch2.br{bottom:-6px;right:-6px;cursor:se-resize}
 .cam-row{display:flex;gap:8px;justify-content:center;margin-top:9px}
 
+/* ─── MULTI-PHOTO THUMBS ─────────────────────── */
+.img-thumb{width:76px;height:76px;border-radius:9px;overflow:hidden;position:relative;flex-shrink:0;border:2px solid var(--bdr);cursor:pointer;transition:border-color .15s}
+.img-thumb:hover{border-color:var(--acc)}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.img-thumb .th-del{position:absolute;top:2px;right:2px;background:rgba(239,68,68,.85);border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;opacity:0;transition:opacity .15s}
+.img-thumb:hover .th-del{opacity:1}
+.img-thumb .th-star{position:absolute;bottom:2px;left:2px;background:rgba(245,158,11,.9);border:none;color:#fff;border-radius:4px;padding:1px 4px;font-size:9px;font-weight:700}
+.img-thumb-add{width:76px;height:76px;border-radius:9px;border:2px dashed var(--bdr);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;flex-shrink:0;transition:all .15s;color:var(--t3);font-size:11px}
+.img-thumb-add:hover{border-color:var(--acc);color:var(--acc);background:rgba(99,102,241,.05)}
+
+/* ─── FULLSCREEN IMAGE LIGHTBOX ─────────────── */
+#imgLightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;display:none;align-items:center;justify-content:center;animation:mIn .18s ease}
+#imgLightbox.O{display:flex}
+#imgLightbox img{max-width:94vw;max-height:90vh;object-fit:contain;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6);user-select:none}
+#imgLbClose{position:absolute;top:14px;right:18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:22px;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;line-height:1}
+#imgLbClose:hover{background:rgba(239,68,68,.45)}
+#imgLbCaption{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:5px 14px;border-radius:20px;max-width:80vw;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+
 /* ─── RECEIPT ─────────────────────────────── */
 .rec{background:var(--bg3);border-radius:9px;padding:14px;font-family:monospace;font-size:12px;line-height:1.9}
 .rh{text-align:center;margin-bottom:8px}
@@ -935,7 +953,7 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
         <button class="btn bg sm" onclick="clearImgFilters()">✕</button>
       </div>
       <div class="ri" id="imgInfo"></div>
-      <div id="imgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px"></div>
+      <div id="imgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px"></div>
     </div>
 
     <!-- BARCODE / LABEL EXPORT -->
@@ -1149,13 +1167,21 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
   </div>
 </div>
 
-<!-- ═══ IMAGE MODAL ═══ -->
+<!-- ═══ IMAGE MODAL (multi-photo) ═══ -->
 <div class="ov" id="imgMod">
-  <div class="modal" style="max-width:460px">
-    <div class="mh"><h3 id="imgModT">📷 Add Photo</h3><button class="mcl" onclick="cm('imgMod');stopCam()">✕</button></div>
-    <div class="mb">
-      <!-- Step A: Choose source -->
-      <div id="imgA">
+  <div class="modal" style="max-width:500px">
+    <div class="mh"><h3 id="imgModT">📷 Photos</h3><button class="mcl" onclick="cm('imgMod');stopCam()">✕</button></div>
+    <div class="mb" style="padding:14px 16px">
+
+      <!-- Step 0: Photo gallery / manager -->
+      <div id="imgStep0">
+        <!-- Existing photos strip -->
+        <div id="imgThumbStrip" style="display:none;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Saved Photos <span id="imgThumbCount" style="color:var(--acc)"></span></div>
+          <div id="imgThumbs" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+        <!-- Add new photo buttons -->
+        <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Add New Photo</div>
         <div class="imsrc">
           <button class="imsrc-btn" onclick="startCam()">📷 Camera</button>
           <button class="imsrc-btn" onclick="document.getElementById('filePick').click()">🖼️ Gallery
@@ -1163,7 +1189,7 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
           </button>
         </div>
         <!-- Camera preview -->
-        <div class="crop-wrap" id="camWrap" style="display:none;height:300px">
+        <div class="crop-wrap" id="camWrap" style="display:none;height:280px">
           <video id="camVid" playsinline autoplay muted></video>
         </div>
         <div class="cam-row" id="camRow" style="display:none">
@@ -1171,10 +1197,11 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
           <button class="btn bp sm" onclick="capturePhoto()">📸 Capture</button>
         </div>
       </div>
+
       <!-- Step B: Crop -->
       <div id="imgB" style="display:none">
         <div style="font-size:12px;color:var(--t2);margin-bottom:8px">Drag to move · Drag corners to resize</div>
-        <div class="crop-wrap" id="cropW" style="height:320px">
+        <div class="crop-wrap" id="cropW" style="height:300px">
           <canvas id="cropC" style="width:100%;height:100%;display:block"></canvas>
           <div class="crop-box" id="cropBx">
             <div class="ch2 tl" data-r="tl"></div><div class="ch2 tr" data-r="tr"></div>
@@ -1186,6 +1213,7 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
           <button class="btn bp" onclick="saveCrop()">✅ Save Photo</button>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -1244,6 +1272,14 @@ nav{flex:1;padding:6px 0;overflow-y:auto}
 <!-- Floating Order Cart Badge -->
 <div class="ocp-badge" id="ocpBadge" onclick="toggleOrderCart()">
   📋 <span id="ocpBadgeCount">0</span> items in order
+</div>
+
+<div id="imgLightbox" onclick="closeLightbox()">
+  <button id="imgLbClose" onclick="closeLightbox()">✕</button>
+  <button id="imgLbPrev" onclick="event.stopPropagation();lbNav(-1)" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:22px;border-radius:50%;width:44px;height:44px;display:none;align-items:center;justify-content:center;cursor:pointer;transition:background .15s">‹</button>
+  <img id="imgLbImg" src="" alt="" onclick="event.stopPropagation()">
+  <button id="imgLbNext" onclick="event.stopPropagation();lbNav(1)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:22px;border-radius:50%;width:44px;height:44px;display:none;align-items:center;justify-content:center;cursor:pointer;transition:background .15s">›</button>
+  <div id="imgLbCaption"></div>
 </div>
 
 <div id="toast"></div>
@@ -2282,8 +2318,9 @@ function renderBrandDetailView(){
       <div style="display:grid;grid-template-columns:90px 1fr;gap:0">
         <!-- Photo -->
         <div style="height:90px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;position:relative">
-          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'👗'}
+          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in" onclick="openLightbox('${esc(img)}','${esc(k)}')">`:'👗'}
           <button onclick="openImgModal('${esc(k)}')" style="position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;border-radius:4px;padding:2px 5px;cursor:pointer">📷</button>
+          ${img?`<button onclick="openLightbox('${esc(img)}','${esc(k)}')" style="position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:10px;border-radius:4px;padding:2px 5px;cursor:pointer">🔍</button>`:''}
           ${allReturn?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,.12)"><span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;transform:rotate(-15deg)">↩ RETURN</span></div>':''}
         </div>
         <!-- Info -->
@@ -2350,6 +2387,8 @@ function openGroup(key){
   _mkey=key;
   const g=getGroups()[key]; if(!g) return;
   const img=DB.images[key];
+  const allPhotos=getArticlePhotos(key);
+  const photoCnt=allPhotos.length;
   document.getElementById('mPT').textContent=key;
   const colorMap={};
   g.items.forEach(item=>{
@@ -2373,9 +2412,25 @@ function openGroup(key){
     const naPlaceholders=allSizes.filter(sz=>!cd.sizes[sz]).map(sz=>'<div class="sp out" style="opacity:.3"><span class="szlbl">'+sz+'</span><span class="qty">N/A</span></div>').join('');
     return '<div class="cb"><div class="ch"><div class="csw" style="background:'+csw(color)+'"></div><div class="cn">'+color+'</div><div class="cst">'+cd.totalStock+' pcs</div></div><div class="sg">'+sizePills+naPlaceholders+'</div></div>';
   }).join('');
+
+  // Photo mini-strip for multi-photos
+  const photoStripHTML = photoCnt>1 ? `
+    <div style="margin-top:10px">
+      <div style="font-size:9.5px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${photoCnt} Photos</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${allPhotos.map((src,i)=>`<div style="width:50px;height:50px;border-radius:7px;overflow:hidden;border:2px solid ${i===0?'var(--acc)':'var(--bdr)'};cursor:pointer;flex-shrink:0" onclick="openLightbox([${allPhotos.map(s=>`'${esc(s)}'`).join(',')}],'${esc(key)}',${i})"><img src="${src}" style="width:100%;height:100%;object-fit:cover"></div>`).join('')}
+      </div>
+    </div>` : '';
+
   document.getElementById('mPB').innerHTML=`
     <div class="d-hero">
-      <div class="d-img">${img?`<img src="${img}">`:'👗'}<div class="d-img-btns"><button class="btn bg sm" onclick="openImgModal('${esc(key)}')">📷 ${img?'Change':'Add'} Photo</button></div></div>
+      <div class="d-img">
+        ${img?`<img src="${img}" style="cursor:zoom-in" onclick="openLightbox([${allPhotos.map(s=>`'${esc(s)}'`).join(',')}],'${esc(key)}',0)">`:'👗'}
+        <div class="d-img-btns">
+          ${img?`<button class="btn bg sm" onclick="openLightbox([${allPhotos.map(s=>`'${esc(s)}'`).join(',')}],'${esc(key)}',0)" style="margin-right:5px">🔍 View${photoCnt>1?' ('+photoCnt+')':''}</button>`:''}
+          <button class="btn bg sm" onclick="openImgModal('${esc(key)}')">📷 ${img?'Manage':'Add'} Photos</button>
+        </div>
+      </div>
       <div>
         <div class="mg" style="margin-bottom:10px">
           <div class="mgc"><div class="l">Category</div><div class="v"><span class="bx bcat">${g.category}</span></div></div>
@@ -2390,6 +2445,7 @@ function openGroup(key){
           ${g.items.some(i=>i.isPurchaseReturn)?'<div class="mgc" style="grid-column:1/-1"><div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:7px;padding:6px 10px;font-size:11px;color:var(--red);font-weight:700">⚠️ PURCHASE RETURN — This item cannot be ordered</div></div>':''}
         </div>
         <div style="font-size:11px;color:var(--t3);background:var(--bg3);padding:8px 11px;border-radius:8px"><strong>Code:</strong> ${g.rawCode||'—'}</div>
+        ${photoStripHTML}
       </div>
     </div>
     <div class="mx-title">Stock Matrix — Color × Size</div>
@@ -2399,20 +2455,118 @@ function openGroup(key){
 }
 function openItem(nm){const item=DB.master.find(i=>i.itemName===nm);if(item)openGroup(item.article||item.itemName);}
 
+/* ─── FULLSCREEN LIGHTBOX (multi-image) ──────── */
+let _lbImages=[], _lbIdx=0;
+function openLightbox(srcOrArr, caption, startIdx){
+  const lb=document.getElementById('imgLightbox');
+  if(Array.isArray(srcOrArr)){
+    _lbImages=srcOrArr;
+    _lbIdx=startIdx||0;
+  } else {
+    // single image — check if article has multi-photos
+    const allImgs=getArticlePhotos(caption);
+    if(allImgs.length>1){_lbImages=allImgs;_lbIdx=allImgs.indexOf(srcOrArr);if(_lbIdx<0)_lbIdx=0;}
+    else{_lbImages=[srcOrArr];_lbIdx=0;}
+  }
+  _lbRender();
+  lb.classList.add('O');
+  document.addEventListener('keydown',_lbKey);
+}
+function _lbRender(){
+  document.getElementById('imgLbImg').src=_lbImages[_lbIdx]||'';
+  const cap=document.getElementById('imgLbCaption');
+  cap.textContent=_lbImages.length>1?`${_lbIdx+1} / ${_lbImages.length}`:'';
+  const prev=document.getElementById('imgLbPrev'),next=document.getElementById('imgLbNext');
+  if(_lbImages.length>1){prev.style.display='flex';next.style.display='flex';}
+  else{prev.style.display='none';next.style.display='none';}
+}
+function lbNav(dir){
+  _lbIdx=(_lbIdx+dir+_lbImages.length)%_lbImages.length;
+  _lbRender();
+}
+function closeLightbox(){
+  const lb=document.getElementById('imgLightbox');
+  lb.classList.remove('O');
+  document.getElementById('imgLbImg').src='';
+  _lbImages=[];_lbIdx=0;
+  document.removeEventListener('keydown',_lbKey);
+}
+function _lbKey(e){
+  if(e.key==='Escape')closeLightbox();
+  else if(e.key==='ArrowRight')lbNav(1);
+  else if(e.key==='ArrowLeft')lbNav(-1);
+}
+
+/* ─── MULTI-PHOTO HELPERS ───────────────────── */
+// Returns array of all photos for an article key (primary + extra)
+function getArticlePhotos(key){
+  const primary = DB.images[key];
+  const extras  = DB.images[key+'__photos'] || [];
+  const arr = Array.isArray(extras) ? [...extras] : [];
+  if(primary && !arr.includes(primary)) arr.unshift(primary);
+  return arr;
+}
+
+// Save full photos array for an article back to DB + IndexedDB
+async function saveArticlePhotos(key, arr){
+  const primary = arr[0] || null;
+  const extras  = arr.slice(1);
+  // Update memory
+  if(primary) DB.images[key]=primary; else delete DB.images[key];
+  if(extras.length) DB.images[key+'__photos']=extras; else delete DB.images[key+'__photos'];
+  // Persist
+  const ops=[];
+  if(primary) ops.push(savePhoto(key, primary)); else ops.push(deletePhoto(key));
+  if(extras.length) ops.push(savePhoto(key+'__photos', JSON.stringify(extras)));
+  else ops.push(deletePhoto(key+'__photos'));
+  await Promise.all(ops);
+  saveDB();
+}
+
 /* ─── IMAGE MODAL ───────────────────────────── */
 function openImgModal(key){
   _curImgKey=key;
-  document.getElementById('imgModT').textContent='📷 Photo: '+key;
+  document.getElementById('imgModT').textContent='📷 '+key;
   imgGoBack();
+  _renderThumbStrip();
   openM('imgMod');
 }
+
+function _renderThumbStrip(){
+  const key=_curImgKey;
+  const photos=getArticlePhotos(key);
+  const strip=document.getElementById('imgThumbStrip');
+  const thumbs=document.getElementById('imgThumbs');
+  const cnt=document.getElementById('imgThumbCount');
+  if(!photos.length){strip.style.display='none';return;}
+  strip.style.display='block';
+  cnt.textContent='('+photos.length+')';
+  thumbs.innerHTML=photos.map((src,i)=>`
+    <div class="img-thumb" onclick="openLightbox('${esc(src)}','${esc(key)}')">
+      <img src="${src}" alt="photo ${i+1}">
+      ${i===0?'<div class="th-star">★ Main</div>':''}
+      <button class="th-del" onclick="event.stopPropagation();deleteArticlePhoto('${esc(key)}',${i})" title="Delete this photo">✕</button>
+    </div>
+  `).join('');
+}
+
+async function deleteArticlePhoto(key, idx){
+  if(!confirm('Delete this photo?')) return;
+  const photos=getArticlePhotos(key);
+  photos.splice(idx,1);
+  await saveArticlePhotos(key, photos);
+  toast('Photo deleted','ok');
+  _renderThumbStrip();
+  renderImgPage();
+  if(_mkey===key) openGroup(key);
+}
+
 function imgGoBack(){
-  // Remove crop event listeners so they don't block other clicks
   if(window._cropMoveH){document.removeEventListener('mousemove',window._cropMoveH);document.removeEventListener('touchmove',window._cropMoveH);window._cropMoveH=null;}
   if(window._cropUpH){document.removeEventListener('mouseup',window._cropUpH);document.removeEventListener('touchend',window._cropUpH);window._cropUpH=null;}
   _cs.drag=false;_cs.resize=false;
   stopCam(); _cropImg=null;
-  document.getElementById('imgA').style.display='block';
+  document.getElementById('imgStep0').style.display='block';
   document.getElementById('imgB').style.display='none';
   document.getElementById('camWrap').style.display='none';
   document.getElementById('camRow').style.display='none';
@@ -2446,7 +2600,7 @@ function loadForCrop(dataUrl){
   _cropImg.src=dataUrl;
 }
 function initCrop(){
-  document.getElementById('imgA').style.display='none';
+  document.getElementById('imgStep0').style.display='none';
   document.getElementById('imgB').style.display='block';
   const wrap=document.getElementById('cropW');
   const canvas=document.getElementById('cropC');
@@ -2508,17 +2662,17 @@ function saveCrop(){
   const canvas=document.getElementById('cropC'),d=canvas._d;if(!d||!_curImgKey)return;
   const cx=Math.max(0,(_cs.x-d.ox)/d.scale),cy=Math.max(0,(_cs.y-d.oy)/d.scale);
   const cw=Math.min(d.iw-cx,_cs.w/d.scale),ch=Math.min(d.ih-cy,_cs.h/d.scale);
-  // Use 400x400 to save space (still crisp on screen)
   const out=document.createElement('canvas');out.width=400;out.height=400;
   out.getContext('2d').drawImage(_cropImg,cx,cy,cw,ch,0,0,400,400);
   const dataUrl=out.toDataURL('image/jpeg',.78);
-  // Save to IndexedDB (unlimited storage)
-  savePhoto(_curImgKey, dataUrl).then(()=>{
-    DB.images[_curImgKey]=dataUrl; // keep in memory
-    saveDB(); // save meta (localStorage, no images)
-    toast('Photo saved! ✓','ok');
-    cm('imgMod');stopCam();
-    if(_mkey===_curImgKey)openGroup(_mkey);
+  // Append to existing photos array
+  const existing=getArticlePhotos(_curImgKey);
+  existing.push(dataUrl);
+  saveArticlePhotos(_curImgKey, existing).then(()=>{
+    toast('Photo saved! ✓ ('+existing.length+' total)','ok');
+    imgGoBack();
+    _renderThumbStrip();
+    if(_mkey===_curImgKey) openGroup(_mkey);
     renderImgPage();
   });
 }
@@ -2549,18 +2703,44 @@ function renderImgPage(){
 
   document.getElementById('imgGrid').innerHTML = entries.slice(0,150).map(([k,g])=>{
     const img = DB.images[k];
-    return `<div style="background:var(--card);border:1px solid ${img?'var(--grn)':'var(--bdr)'};border-radius:11px;overflow:hidden;transition:border .2s">
-      <div style="height:105px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;position:relative">
-        ${img ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover">` : '👗'}
-        ${img ? `<div style="position:absolute;bottom:3px;right:3px;background:rgba(16,185,129,.9);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">✓</div>`
-               : `<div style="position:absolute;bottom:3px;right:3px;background:rgba(239,68,68,.85);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff">✕</div>`}
+    const allPhotos = getArticlePhotos(k);
+    const photoCnt  = allPhotos.length;
+    const stockCls = g.totalStock<=0 ? 'var(--red)' : g.totalStock<=3 ? 'var(--yel)' : 'var(--grn)';
+    const stockLbl = g.totalStock<=0 ? 'OUT' : g.totalStock+' pcs';
+    // Build inline array string for lightbox call
+    const lbArr = allPhotos.map(s=>`'${esc(s)}'`).join(',');
+    return `<div style="background:var(--card);border:1.5px solid ${img?'var(--grn)':'var(--bdr)'};border-radius:13px;overflow:hidden;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.12)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(0,0,0,.06)'">
+      <!-- Main image (square) -->
+      <div style="aspect-ratio:1/1;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:44px;overflow:hidden;position:relative;cursor:${img?'zoom-in':'default'}" onclick="${img?`openLightbox([${lbArr}],'${esc(k)}',0)`:''}">
+        ${img
+          ? `<img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block">`
+          : `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;opacity:.45"><span>👗</span><span style="font-size:11px;color:var(--t3)">No photo</span></div>`}
+        <!-- Stock badge top-left -->
+        <div style="position:absolute;top:7px;left:7px;background:${stockCls};color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;opacity:.95">${stockLbl}</div>
+        <!-- Photo count badge top-right -->
+        ${photoCnt>0
+          ? `<div style="position:absolute;top:7px;right:7px;background:${photoCnt>1?'var(--acc)':'rgba(16,185,129,.88)'};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">${photoCnt>1?'📷 '+photoCnt:'✓'}</div>`
+          : `<div style="position:absolute;top:7px;right:7px;background:rgba(239,68,68,.8);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">✕</div>`}
+        <!-- Hover overlay -->
+        ${img ? `<div onclick="event.stopPropagation();openLightbox([${lbArr}],'${esc(k)}',0)" style="position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;transition:background .18s" onmouseover="this.style.background='rgba(0,0,0,.38)';this.querySelector('span').style.opacity='1'" onmouseout="this.style.background='rgba(0,0,0,0)';this.querySelector('span').style.opacity='0'"><span style="opacity:0;transition:opacity .18s;background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:700;padding:6px 13px;border-radius:20px;pointer-events:none">🔍 View All</span></div>` : ''}
       </div>
-      <div style="padding:8px 9px">
-        <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k}</div>
-        <div style="font-size:9.5px;color:var(--t3);margin-bottom:6px">${g.category} · <span class="bx bbr" style="font-size:9px">${g.brand||'—'}</span></div>
-        <button onclick="openImgModal('${esc(k)}')" style="width:100%;border:1px dashed ${img?'var(--grn)':'var(--bdr)'};border-radius:7px;padding:5px;font-size:11px;color:${img?'var(--grn)':'var(--t3)'};background:none;font-family:inherit;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='${img?'var(--grn)':'var(--bdr)'}';">
-          ${img ? '🔄 Change Photo' : '📷 Add Photo'}
-        </button>
+      <!-- Extra thumbnails strip (if >1 photo) -->
+      ${photoCnt>1 ? `<div style="display:flex;gap:4px;padding:6px 8px;background:var(--bg3);overflow-x:auto">
+        ${allPhotos.slice(0,5).map((src,i)=>`<div style="width:38px;height:38px;flex-shrink:0;border-radius:5px;overflow:hidden;border:2px solid ${i===0?'var(--acc)':'var(--bdr)'};cursor:pointer" onclick="event.stopPropagation();openLightbox([${lbArr}],'${esc(k)}',${i})"><img src="${src}" style="width:100%;height:100%;object-fit:cover"></div>`).join('')}
+        ${photoCnt>5?`<div style="width:38px;height:38px;flex-shrink:0;border-radius:5px;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--t3);background:var(--bg2);cursor:pointer" onclick="openLightbox([${lbArr}],'${esc(k)}',5)">+${photoCnt-5}</div>`:''}
+      </div>` : ''}
+      <!-- Info area -->
+      <div style="padding:9px 10px">
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px" title="${k}">${k}</div>
+        <div style="font-size:10px;color:var(--t3);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.category}${g.brand?' · '+g.brand:''}</div>
+        <div style="display:flex;gap:5px">
+          ${img
+            ? `<button onclick="openLightbox([${lbArr}],'${esc(k)}',0)" style="flex:1;border:1px solid var(--grn);border-radius:7px;padding:5px 4px;font-size:10px;font-weight:700;color:var(--grn);background:rgba(16,185,129,.08);font-family:inherit;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(16,185,129,.2)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">🔍 View</button>`
+            : ''}
+          <button onclick="openImgModal('${esc(k)}')" style="flex:1;border:1px dashed ${img?'var(--bdr)':'var(--acc)'};border-radius:7px;padding:5px 4px;font-size:10px;font-weight:${img?'600':'700'};color:${img?'var(--t2)':'var(--acc)'};background:${img?'none':'rgba(99,102,241,.07)'};font-family:inherit;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='${img?'var(--bdr)':'var(--acc)'}';this.style.color='${img?'var(--t2)':'var(--acc)'}'">
+            ${img ? '📷 +Add' : '📷 Add'}
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('') || '<div class="empty"><div style="font-size:36px;margin-bottom:8px">📷</div><p>No articles match</p></div>';
@@ -5229,7 +5409,7 @@ function renderSkuCards(entries, soldMap){
       <div style="height:120px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;position:relative">
         ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="opacity:.4">👗</span>'}
         <div style="position:absolute;top:5px;right:5px;background:${g.totalStock<=0?'var(--red)':g.totalStock<=3?'var(--yel)':'var(--grn)'};color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px">${g.totalStock<=0?'OUT':g.totalStock+' pcs'}</div>
-        ${!img?`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 6px;cursor:pointer">📷 Add</button>`:`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 5px;cursor:pointer">📷</button>`}
+        ${!img?`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 6px;cursor:pointer">📷 Add</button>`:`<button onclick="event.stopPropagation();openImgModal('${esc(k)}')" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 5px;cursor:pointer">📷</button><button onclick="event.stopPropagation();openLightbox('${esc(img)}','${esc(k)}')" style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:9px;border-radius:5px;padding:2px 6px;cursor:pointer">🔍</button>`}
       </div>
       <div style="padding:9px 10px">
         <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">${k}</div>
@@ -5704,13 +5884,21 @@ function loadAllPhotos(){
       const result={};
       store.openCursor().onsuccess=e=>{
         const cursor=e.target.result;
-        if(cursor){result[cursor.key]=cursor.value;cursor.continue();}
+        if(cursor){
+          const key=cursor.key, val=cursor.value;
+          // __photos keys store JSON arrays
+          if(key.endsWith('__photos')){
+            try{result[key]=JSON.parse(val);}catch{result[key]=[];}
+          } else {
+            result[key]=val;
+          }
+          cursor.continue();
+        }
         else res(result);
       };
       tx.onerror=e=>rej(e.target.error);
     });
   }).catch(()=>{
-    // Fallback: return images from DB if IndexedDB fails
     return DB.images||{};
   });
 }
